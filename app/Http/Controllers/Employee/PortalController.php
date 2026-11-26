@@ -587,6 +587,7 @@ class PortalController extends Controller
                     $validator,
                     "days.{$day['key']}.time_in",
                     "days.{$day['key']}.time_out",
+                    EmployeeWorkTimeConstraints::SCHEDULE_MIN_DURATION_MINUTES,
                 );
             }
         }

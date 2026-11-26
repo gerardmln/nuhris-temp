@@ -61,7 +61,7 @@
                             <option value="{{ $term }}" {{ old('term_label', $currentSchedule?->term_label ?? $currentSchedule?->semester_label ?? '') === $term ? 'selected' : '' }}>{{ $term }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-1 text-xs text-slate-500">Choose the term before submitting. Work times must be more than 2 hours apart, and times between 11:00 PM and 4:00 AM are not allowed.</p>
+                    <p class="mt-1 text-xs text-slate-500">Choose the term before submitting. Work times must be more than 1 hour apart, and times between 11:00 PM and 4:00 AM are not allowed.</p>
                     @error('term_label')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
