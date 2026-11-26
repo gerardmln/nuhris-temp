@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 26, 2026 at 06:33 AM
+-- Generation Time: Nov 26, 2026 at 06:43 AM
 -- Server version: 10.11.19-MariaDB
 -- PHP Version: 8.5.13
 
@@ -2246,7 +2246,7 @@ INSERT INTO `employees` (`id`, `employee_id`, `first_name`, `last_name`, `email`
 (66, '238002', 'Maria Andrea', 'Magaling', 'Magaling@gmail.com', 6, 'Associate Professor', 'Faculty', 'Associate Professor 1', 'active', '2024-07-22', NULL, NULL, NULL, '2026-11-24 10:59:09', '2026-11-24 10:59:09', NULL, 'probationary', NULL),
 (67, '23-8037', 'Ronald', 'Catapang', 'Catapang@gmail.com', 5, 'Associate Professor', 'Faculty', 'Associate Professor 1', 'active', '2023-08-01', NULL, NULL, NULL, '2026-11-24 11:03:36', '2026-11-24 11:03:36', NULL, 'regular', NULL),
 (68, '22-8036', 'Rosa Maria', 'Cayabyab', 'cayabyab@gmail.com', 5, 'Assistant Professor', 'Faculty', 'Assistant Professor 1', 'active', '2023-08-01', NULL, NULL, NULL, '2026-11-24 11:09:57', '2026-11-24 11:09:57', NULL, 'regular', NULL),
-(69, '22-8020', 'Jay-ar', 'Dimaculangan', 'dimaculangan@gmail.com', 5, 'Associate Professor', 'Faculty', 'Associate Professor 2', 'active', '2022-07-01', NULL, NULL, NULL, '2026-11-24 11:11:18', '2026-11-24 11:11:18', NULL, 'regular', NULL),
+(69, '22-8020', 'Jay-ar', 'Dimaculangan', 'Jdimaculangan@gmail.com', 5, 'Associate Professor', 'Faculty', 'Associate Professor 2', 'active', '2022-07-01', NULL, NULL, NULL, '2026-11-24 11:11:18', '2026-11-24 11:11:18', NULL, 'regular', NULL),
 (70, '24-08084', 'Josele Mari', 'Figueroa', 'Josele@gmail.com', 5, 'Assistant Professor', 'Faculty', 'Assistant Professor 1', 'active', '2025-07-21', NULL, NULL, NULL, '2026-11-24 11:13:15', '2026-11-24 11:13:15', NULL, 'probationary', NULL),
 (71, '23-8059', 'Larry', 'Fronda Jr.', 'Fronda@gmail.com', 5, 'Assistant Professor', 'Faculty', 'Assistant Professor 2', 'active', '2023-08-14', NULL, NULL, NULL, '2026-11-24 11:14:51', '2026-11-24 11:14:51', NULL, 'regular', NULL),
 (72, '23-8028', 'Gene Roy', 'Hernandez', 'Hernandez@gmail.com', 5, 'Associate Professor', 'Faculty', 'Associate Professor 4', 'active', '2023-08-14', NULL, NULL, NULL, '2026-11-24 11:15:58', '2026-11-24 11:15:58', NULL, 'regular', NULL),
