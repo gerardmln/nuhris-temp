@@ -13,11 +13,8 @@ class EmployeeWorkTimeConstraints
     /** Minutes past midnight for 4:00 AM (inclusive). */
     public const RESTRICTED_END_MINUTES = 4 * 60;
 
-    /** Default minimum duration for employee time submissions. */
-    public const MIN_DURATION_MINUTES = 120;
-
-    /** Schedule shifts of 1 hour or less are rejected. */
-    public const SCHEDULE_MIN_DURATION_MINUTES = 60;
+    /** Work periods of 1 hour or less are rejected. */
+    public const MIN_DURATION_MINUTES = 60;
 
     public static function isRestrictedTime(?string $time): bool
     {
@@ -48,12 +45,11 @@ class EmployeeWorkTimeConstraints
     public static function failsMinimumDuration(
         ?string $timeIn,
         ?string $timeOut,
-        int $minimumDurationMinutes = self::MIN_DURATION_MINUTES,
     ): bool
     {
         $duration = self::durationMinutes($timeIn, $timeOut);
 
-        return $duration !== null && $duration <= $minimumDurationMinutes;
+        return $duration !== null && $duration <= self::MIN_DURATION_MINUTES;
     }
 
     /**
@@ -66,9 +62,8 @@ class EmployeeWorkTimeConstraints
         Validator $validator,
         string $timeInAttribute = 'time_in',
         string $timeOutAttribute = 'time_out',
-        int $minimumDurationMinutes = self::MIN_DURATION_MINUTES,
     ): void {
-        $validator->after(function (Validator $validator) use ($timeInAttribute, $timeOutAttribute, $minimumDurationMinutes): void {
+        $validator->after(function (Validator $validator) use ($timeInAttribute, $timeOutAttribute): void {
             $data = $validator->getData();
             $timeIn = data_get($data, $timeInAttribute);
             $timeOut = data_get($data, $timeOutAttribute);
@@ -95,14 +90,10 @@ class EmployeeWorkTimeConstraints
                 );
             }
 
-            if (self::failsMinimumDuration($timeIn, $timeOut, $minimumDurationMinutes)) {
-                $durationLabel = $minimumDurationMinutes % 60 === 0
-                    ? intdiv($minimumDurationMinutes, 60).' hour'.($minimumDurationMinutes === 60 ? '' : 's')
-                    : $minimumDurationMinutes.' minutes';
-
+            if (self::failsMinimumDuration($timeIn, $timeOut)) {
                 $validator->errors()->add(
                     $timeOutAttribute,
-                    "Time in and time out must be more than {$durationLabel} apart."
+                    'Time in and time out must be more than 1 hour apart.'
                 );
             }
         });

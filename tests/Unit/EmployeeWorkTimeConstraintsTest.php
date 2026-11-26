@@ -8,17 +8,14 @@ use Tests\TestCase;
 
 class EmployeeWorkTimeConstraintsTest extends TestCase
 {
-    public function test_schedule_shift_of_one_hour_or_less_fails_validation(): void
+    public function test_work_period_of_one_hour_or_less_fails_validation(): void
     {
         $validator = Validator::make([
             'time_in' => '08:00',
             'time_out' => '09:00',
         ], []);
 
-        EmployeeWorkTimeConstraints::applyToValidator(
-            $validator,
-            minimumDurationMinutes: EmployeeWorkTimeConstraints::SCHEDULE_MIN_DURATION_MINUTES,
-        );
+        EmployeeWorkTimeConstraints::applyToValidator($validator);
 
         $this->assertTrue($validator->fails());
         $this->assertSame(
@@ -27,17 +24,14 @@ class EmployeeWorkTimeConstraintsTest extends TestCase
         );
     }
 
-    public function test_schedule_shift_longer_than_one_hour_passes_validation(): void
+    public function test_work_period_longer_than_one_hour_passes_validation(): void
     {
         $validator = Validator::make([
             'time_in' => '08:00',
             'time_out' => '09:01',
         ], []);
 
-        EmployeeWorkTimeConstraints::applyToValidator(
-            $validator,
-            minimumDurationMinutes: EmployeeWorkTimeConstraints::SCHEDULE_MIN_DURATION_MINUTES,
-        );
+        EmployeeWorkTimeConstraints::applyToValidator($validator);
 
         $this->assertFalse($validator->fails());
     }
