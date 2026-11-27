@@ -11,8 +11,8 @@
         <div class="mb-4 flex items-center justify-between gap-3">
             <h2 class="text-3xl font-bold text-[#1f2b5d]">Employee Details</h2>
             <div class="flex gap-2">
-                <a href="{{ route('employees.edit', $employee) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
-                <a href="{{ route('employees.index') }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Back</a>
+                <a href="{{ route('employees.edit', ['employee' => $employee] + $returnQuery) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
+                <a href="{{ route('employees.index', $returnQuery) }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Back</a>
             </div>
         </div>
 

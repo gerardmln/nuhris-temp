@@ -7,7 +7,7 @@
 @endphp
 
 @section('content')
-    <a href="{{ route('employees.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900">
+    <a href="{{ route('employees.index', $returnQuery) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900">
         <span>&larr;</span>
         Back to Employees
     </a>

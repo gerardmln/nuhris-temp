@@ -5,7 +5,7 @@
 A complete leave management system with:
 1. ✅ Leave balance tracking (VL, SL, EL only)
 2. ✅ Base leave credits by employment type
-3. ✅ Yearly accrual logic for regular employees
+3. ✅ Tenure-based credits for Faculty and ASP, with eligibility thresholds
 4. ✅ Detailed leave usage breakdown
 5. ✅ Deductible vs tracked-only leave classification
 
@@ -26,8 +26,8 @@ php artisan leave-balance:initialize --employee-id=5
 ```
 
 This command:
-- Calculates base credits based on employment type
-- Applies yearly accrual for regular employees with 1+ year service
+- Calculates credits based on employment type and service milestones
+- Applies yearly accrual after the Faculty or ASP eligibility threshold
 - Creates `LeaveBalance` records for VL, SL, EL
 - Calculates remaining balance = total credits - used days
 
@@ -83,40 +83,34 @@ php artisan leave-balance:initialize [--employee-id=ID] [--force]
 
 ## Leave Credit Structure
 
-### Base Credits (Year 1)
+### Credits and Eligibility
 
-| Leave Type | Faculty | ASP |
+| Employee Type | Before Eligibility | Initial Credits |
 |---|---|---|
-| Vacation Leave | 11 | 9 |
-| Sick Leave | 11 | 9 |
-| Emergency Leave | 3 | 3 |
+| Faculty (non-contractual, full-time) | 0 / 0 / 0 | At 1 year: 11 VL / 11 SL / 3 EL |
+| ASP | 0 / 0 / 0 | At 6 months: 9 VL / 9 SL / 3 EL |
+| Part-Time Faculty | 0 / 0 / 0 | Always 0 / 0 / 0 |
+| Contractual Full-Time Faculty | Existing term rules | 3 VL / 3 SL / 3 EL per term |
 
-### Yearly Increment (Regular Employees Only)
-
-**Eligibility**:
-- Faculty: Regular if hired ≥1 year ago
-- ASP: Regular if hired ≥6 months ago (but increment after 1 year service)
-- Part-Time: NEVER regular (no accrual ever)
-
-**Accrual Per Year**:
-- Vacation Leave: +2 (max 15)
-- Sick Leave: +2 (max 15)
-- Emergency Leave: +0 (fixed at 3)
+After initial eligibility, Faculty receive +2 VL and +2 SL at each completed service-year milestone starting at year 2. ASP receive +2 VL and +2 SL at each completed service-year milestone starting at year 1. Both are capped at 15 VL and 15 SL; EL remains fixed at 3. Contractual faculty retain their existing per-term rules.
 
 ### Complete Example Timeline
 
 **Faculty Employee Hired May 1, 2024**:
 ```
-May 2024: Year 0
-- VL: 11, SL: 11, EL: 3 (base only, not regular yet)
+May 2024: Before 1 year
+- VL: 0, SL: 0, EL: 0
 
-May 2025: Year 1 (NOW REGULAR)
-- VL: 11+2=13, SL: 11+2=13, EL: 3 (first accrual)
+May 2025: Year 1
+- VL: 11, SL: 11, EL: 3 (initial credits)
 
 May 2026: Year 2
-- VL: 13+2=15 (reaches max), SL: 13+2=15 (reaches max), EL: 3
+- VL: 11+2=13, SL: 11+2=13, EL: 3
 
-May 2027: Year 3+
+May 2027: Year 3
+- VL: 13+2=15, SL: 13+2=15, EL: 3 (reaches max)
+
+May 2028: Year 4+
 - VL: 15 (max), SL: 15 (max), EL: 3 (no change, at max)
 ```
 
@@ -252,16 +246,15 @@ $leaveBalanceService->initializeOrUpdateBalance($employee);
 
 ## Important Notes
 
-### 1. Regular Employee Status
-- Automatically determined by:
-  - Employment type (not part-time)
-  - Hire date (tenure requirement)
-- No manual configuration needed
-- Part-Time employees are ALWAYS irregular (no accrual)
+### 1. Eligibility
+- Faculty receive credits after 1 year of service; ASP receive credits after 6 months.
+- Part-Time Faculty always have 0 VL / 0 SL / 0 EL, regardless of tenure.
+- Contractual faculty retain their 3 / 3 / 3 per-term credits.
 
-### 2. Yearly Accrual
-- Calculated based on **complete years of service**
-- Leave usage resets every January 1
+### 2. Yearly Accrual and Usage
+- Calculated at completed service-year milestones, with +2 VL and +2 SL per year after initial eligibility.
+- Approved deductible leave before eligibility does not use credits earned later.
+- Leave usage resets every January 1 for most employees; contractual faculty use their current term start.
 - The annual reset command runs daily at 12:05 AM and processes all employees on January 1
 - The scheduler must be running for automatic resets: `php artisan schedule:work` or a server cron calling `php artisan schedule:run`
 
@@ -271,17 +264,15 @@ Remaining Balance = Total Credits - Used Days
 
 Where:
 Total Credits = Base Credits + Yearly Accrual (capped at max)
-Used Days = Sum of approved deductible leave days in the current calendar year
+Used Days = Sum of approved deductible leave days since the later of January 1 or the employee's eligibility date
 ```
 
-### 4. No Rollover
-- Current implementation does not carry over unused leaves
-- Can be configured in future if needed
+For contractual faculty, the usage period starts at the approved term start date (or hire date before the first term).
 
-### 5. Negative Balance
-- System allows negative balance (overdraft)
-- Shows as negative in remaining_days
-- No blocking mechanism (can be added if needed)
+### 4. Balance Limits
+- Remaining balance is clamped at zero; it cannot become negative.
+- Approved deductible leave with no eligible credits is recorded but does not validate attendance as present.
+- Usage before the current period is not deducted from the current balance.
 
 ---
 
@@ -303,12 +294,10 @@ php artisan leave-balance:initialize --employee-id=<id>
 php artisan leave-balance:initialize --force
 ```
 
-### Part-Time Employee Still Shows Balance
-**Cause**: Employee type classification
+### Employee Has Unexpected Credits
+**Cause**: Employee type or hire date is not classified as expected
 
-**Solution**: Verify employment_type field:
-- Must contain "part-time", "part time", or "parttime" (case-insensitive)
-- After correction, run: `php artisan leave-balance:initialize`
+**Solution**: Verify `employment_type` and `hire_date`, then run `php artisan leave-balance:initialize --employee-id=<id>`. Part-Time Faculty should have zero credits; contractual faculty follow their term rules.
 
 ### ASP Shows Wrong Credits
 **Cause**: Employment type not recognized
@@ -347,9 +336,12 @@ php artisan leave-balance:initialize --force
 ## Testing Checklist
 
 - [ ] Initialize employee balances with command
-- [ ] Verify Faculty Year 1 credits (11, 11, 3)
-- [ ] Verify ASP Year 1 credits (9, 9, 3)
-- [ ] Verify Part-Time gets no balance
+- [ ] Verify Faculty has 0 credits before 1 year, then 11 / 11 / 3
+- [ ] Verify Faculty gains +2 VL and SL each following year, capped at 15 / 15 / 3
+- [ ] Verify ASP has 0 credits before 6 months, then 9 / 9 / 3
+- [ ] Verify ASP gains +2 VL and SL at each completed year, capped at 15 / 15 / 3
+- [ ] Verify Part-Time Faculty always has 0 credits and approved leave is absent in DTR
+- [ ] Verify contractual faculty still receives 3 / 3 / 3 per term
 - [ ] Approve leave request and recalculate
 - [ ] Check remaining balance decreased correctly
 - [ ] Verify deductible vs tracked-only separation in view

@@ -88,6 +88,41 @@ class ContractualFacultyTest extends TestCase
         $this->assertSame(15.0, $this->balances($faculty)['Vacation Leave']); // 11 + 2 per year, capped
     }
 
+    public function test_faculty_and_asp_credits_start_at_their_service_thresholds(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-27 12:00:00'));
+
+        $facultyBeforeYear = $this->employee('Faculty', '26-0101', '2025-11-28');
+        $facultyAtOneYear = $this->employee('Faculty', '26-0102', '2025-11-27');
+        $facultyAtTwoYears = $this->employee('Faculty', '26-0103', '2024-11-27');
+        $aspBeforeSixMonths = $this->employee('Admin Support Personnel', '26-0104', '2026-05-28');
+        $aspAtSixMonths = $this->employee('Admin Support Personnel', '26-0105', '2026-05-27');
+        $aspAtOneYear = $this->employee('Admin Support Personnel', '26-0106', '2025-11-27');
+        $partTime = $this->employee('Part-Time Faculty', '26-0107', '2020-01-01');
+
+        $zero = ['Emergency Leave' => 0.0, 'Sick Leave' => 0.0, 'Vacation Leave' => 0.0];
+        $this->assertSame($zero, collect($this->balances($facultyBeforeYear))->sortKeys()->all());
+        $this->assertSame(['Emergency Leave' => 3.0, 'Sick Leave' => 11.0, 'Vacation Leave' => 11.0], collect($this->balances($facultyAtOneYear))->sortKeys()->all());
+        $this->assertSame(['Emergency Leave' => 3.0, 'Sick Leave' => 13.0, 'Vacation Leave' => 13.0], collect($this->balances($facultyAtTwoYears))->sortKeys()->all());
+        $this->assertSame($zero, collect($this->balances($aspBeforeSixMonths))->sortKeys()->all());
+        $this->assertSame(['Emergency Leave' => 3.0, 'Sick Leave' => 9.0, 'Vacation Leave' => 9.0], collect($this->balances($aspAtSixMonths))->sortKeys()->all());
+        $this->assertSame(['Emergency Leave' => 3.0, 'Sick Leave' => 11.0, 'Vacation Leave' => 11.0], collect($this->balances($aspAtOneYear))->sortKeys()->all());
+        $this->assertSame($zero, collect($this->balances($partTime))->sortKeys()->all());
+    }
+
+    public function test_leave_before_eligibility_does_not_reduce_credits_earned_later(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-27 12:00:00'));
+        $faculty = $this->employee('Faculty', '26-0108', '2025-12-01');
+        $this->leave($faculty, '2026-11-27', 1);
+
+        $this->assertSame(0.0, $this->balances($faculty)['Vacation Leave']);
+
+        $this->travelTo(Carbon::parse('2026-12-02 12:00:00'));
+
+        $this->assertSame(11.0, $this->balances($faculty->fresh())['Vacation Leave']);
+    }
+
     private function leave(Employee $employee, string $date, float $days): void
     {
         LeaveRequest::query()->create([

@@ -24,6 +24,15 @@ class EmployeeController extends Controller
 {
     use HandlesEmployeeBulkUpload;
 
+    private const EMPLOYEE_LIST_QUERY_KEYS = [
+        'search',
+        'department_id',
+        'employee_class',
+        'status',
+        'position',
+        'page',
+    ];
+
     public function index(Request $request): View
     {
         $search = $request->string('search')->toString();
@@ -85,6 +94,7 @@ class EmployeeController extends Controller
                 'status' => $status,
                 'position' => $position,
             ],
+            'returnQuery' => $this->employeeListQuery($request),
         ], $this->formOptions()));
     }
 
@@ -155,22 +165,24 @@ class EmployeeController extends Controller
             ]);
     }
 
-    public function show(Employee $employee): View
+    public function show(Request $request, Employee $employee): View
     {
         $employee->load(['department', 'latestResumeCredential']);
 
         return view('hr.employees.show', [
             'employee' => $employee,
+            'returnQuery' => $this->employeeListQuery($request),
         ]);
     }
 
-    public function edit(Employee $employee): View
+    public function edit(Request $request, Employee $employee): View
     {
         Department::ensureConfiguredSchoolsExist();
 
         return view('hr.employees.edit', array_merge([
             'employee' => $employee,
             'departments' => Department::query()->facultySchools()->orderBy('name')->get(),
+            'returnQuery' => $this->employeeListQuery($request),
         ], $this->formOptions()));
     }
 
@@ -204,7 +216,7 @@ class EmployeeController extends Controller
         );
 
         return redirect()
-            ->route('employees.index')
+            ->route('employees.index', $this->employeeListQuery($request))
             ->with('success', 'Employee updated successfully.');
     }
 
@@ -335,5 +347,13 @@ class EmployeeController extends Controller
     private function applyDefaultDepartmentForNonTeachingRoles(array $payload): array
     {
         return Employee::withDefaultDepartment($payload);
+    }
+
+    private function employeeListQuery(Request $request): array
+    {
+        return array_filter(
+            array_intersect_key($request->query(), array_flip(self::EMPLOYEE_LIST_QUERY_KEYS)),
+            'is_scalar'
+        );
     }
 }

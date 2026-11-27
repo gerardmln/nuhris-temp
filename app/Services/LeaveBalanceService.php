@@ -58,7 +58,7 @@ class LeaveBalanceService
     ];
 
     /**
-     * Yearly increment for regular employees with 1+ year service.
+     * Yearly increment after each employee type's initial credit eligibility.
      */
     private const YEARLY_INCREMENT = [
         'Vacation Leave' => 2,
@@ -91,8 +91,8 @@ class LeaveBalanceService
 
         // For each deductible leave type, calculate total credits
         foreach ($baseCredits as $leaveType => $baseAmount) {
-            // Calculate yearly increments if employee is regular
-            $totalCredits = $this->calculateTotalCredits($employee, $leaveType, $baseAmount);
+            // Calculate credits after the employee's eligibility threshold.
+            $totalCredits = $this->calculateTotalCredits($employee, $leaveType, $baseAmount, $typeKey);
 
             // Calculate used days from approved leave requests
             $usedDays = $this->calculateUsedDays($employee, $leaveType);
@@ -141,31 +141,73 @@ class LeaveBalanceService
     }
 
     /**
-     * Calculate total credits from completed hire anniversaries.
+     * Calculate total credits from the employee's service milestones.
      */
-    private function calculateTotalCredits(Employee $employee, string $leaveType, int $baseAmount): float
+    private function calculateTotalCredits(Employee $employee, string $leaveType, int $baseAmount, string $typeKey): float
     {
         $totalCredits = (float) $baseAmount;
 
-        if (
-            ! $employee->hire_date
-            || $this->isPartTimeEmployee($employee)
-            || $employee->isContractualFaculty()
-        ) {
+        if ($employee->isContractualFaculty()) {
             return $totalCredits;
+        }
+
+        if ($this->isPartTimeEmployee($employee) || ! $employee->hire_date) {
+            return 0;
+        }
+
+        $eligibilityDate = $this->creditEligibilityDate($employee, $typeKey);
+
+        if (! $eligibilityDate || now()->startOfDay()->lt($eligibilityDate)) {
+            return 0;
         }
 
         $increment = self::YEARLY_INCREMENT[$leaveType] ?? 0;
         $maxCredits = self::MAX_CREDITS[$leaveType] ?? PHP_INT_MAX;
 
         $completeYears = (int) floor(Carbon::parse($employee->hire_date)->diffInYears(now()));
-        $totalCredits += $completeYears * $increment;
+        $incrementYears = $typeKey === 'faculty' ? max(0, $completeYears - 1) : $completeYears;
+        $totalCredits += $incrementYears * $increment;
 
         if ($totalCredits > $maxCredits) {
             $totalCredits = $maxCredits;
         }
 
         return $totalCredits;
+    }
+
+    private function creditEligibilityDate(Employee $employee, string $typeKey): ?Carbon
+    {
+        if (! $employee->hire_date) {
+            return null;
+        }
+
+        $hireDate = Carbon::parse($employee->hire_date)->startOfDay();
+
+        return match ($typeKey) {
+            'faculty' => $hireDate->copy()->addYearNoOverflow(),
+            'asp' => $hireDate->copy()->addMonthsNoOverflow(6),
+            default => null,
+        };
+    }
+
+    /**
+     * Whether an employee has reached the date when deductible leave credits start.
+     * Contractual faculty keep their existing per-term eligibility.
+     */
+    public function isEligibleForLeaveCreditsOn(Employee $employee, Carbon $date): bool
+    {
+        if ($employee->isContractualFaculty()) {
+            return true;
+        }
+
+        if ($this->isPartTimeEmployee($employee) || ! $employee->hire_date) {
+            return false;
+        }
+
+        $typeKey = $this->determineEmployeeTypeKey(strtolower(trim((string) $employee->employment_type)));
+        $eligibilityDate = $typeKey ? $this->creditEligibilityDate($employee, $typeKey) : null;
+
+        return $eligibilityDate !== null && $date->copy()->startOfDay()->gte($eligibilityDate);
     }
 
     public function isPartTimeEmployee(Employee $employee): bool
@@ -218,7 +260,13 @@ class LeaveBalanceService
     public function usagePeriodStart(Employee $employee): Carbon
     {
         if (! $employee->isContractualFaculty()) {
-            return $this->currentCalendarYearStart();
+            $yearStart = $this->currentCalendarYearStart();
+            $typeKey = $this->determineEmployeeTypeKey(strtolower(trim((string) $employee->employment_type)));
+            $eligibilityDate = $typeKey ? $this->creditEligibilityDate($employee, $typeKey) : null;
+
+            return $eligibilityDate && $eligibilityDate->gt($yearStart)
+                ? $eligibilityDate
+                : $yearStart;
         }
 
         $termStart = $employee->leave_term_started_at ?? $employee->hire_date;

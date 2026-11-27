@@ -70,6 +70,7 @@ return [
         "Academic Director's Office",
         'Health Services Office (HSO)',
         'Information Technology Systems Office / Information Technology Services Office',
+        'Physical Facilities Management Office',
     ],
 
     'department_schools' => [

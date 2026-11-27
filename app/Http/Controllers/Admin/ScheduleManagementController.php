@@ -33,6 +33,7 @@ class ScheduleManagementController extends Controller
         $search = $request->string('search')->trim()->toString();
         $departmentId = $request->string('department_id')->toString();
         $statusFilter = $request->string('status')->toString() ?: 'all';
+        $returnQuery = $this->scheduleListQuery($request);
 
         $employees = Employee::query()
             ->with('department')
@@ -117,6 +118,7 @@ class ScheduleManagementController extends Controller
                 'status' => $statusFilter,
                 'search' => $search,
             ],
+            'returnQuery' => $returnQuery,
         ]);
     }
 
@@ -346,7 +348,7 @@ class ScheduleManagementController extends Controller
             ->with('success', 'All schedules were reset. Employees must resubmit before DTR validation resumes.');
     }
 
-    public function edit(EmployeeScheduleSubmission $submission, EmployeeScheduleService $scheduleService): View
+    public function edit(Request $request, EmployeeScheduleSubmission $submission, EmployeeScheduleService $scheduleService): View
     {
         $submission->loadMissing(['employee', 'days']);
 
@@ -355,6 +357,7 @@ class ScheduleManagementController extends Controller
             'employee' => $submission->employee,
             'days' => $submission->days,
             'weekDays' => $scheduleService->weeklyDays(),
+            'returnQuery' => $this->scheduleListQuery($request),
         ]);
     }
 
@@ -418,8 +421,19 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id]
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', 'Schedule for '.$submission->employee?->full_name.' has been updated. Employee has been notified.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function scheduleListQuery(Request $request): array
+    {
+        return array_filter(
+            $request->only(['search', 'department_id', 'status']),
+            'is_scalar'
+        );
     }
 
     public function clear(Request $request, EmployeeScheduleSubmission $submission): RedirectResponse

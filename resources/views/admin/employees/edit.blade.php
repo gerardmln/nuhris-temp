@@ -5,11 +5,11 @@
 
 @section('content')
     @php
-        $cancelRoute = route('admin.employees.index');
+        $cancelRoute = route('admin.employees.index', $returnQuery);
     @endphp
 
     <div class="p-6">
-        <form method="POST" action="{{ route('admin.employees.update', $employee) }}" data-employee-form>
+        <form method="POST" action="{{ route('admin.employees.update', ['employee' => $employee] + $returnQuery) }}" data-employee-form>
             @csrf
             @method('PUT')
 

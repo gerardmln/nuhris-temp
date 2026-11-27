@@ -84,6 +84,8 @@
         <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">Current Year</p><p class="mt-1 text-4xl font-extrabold">{{ $stats['current_year'] }}</p></article>
     </div>
 
+    @include('partials.leave-credit-rules')
+
     <article class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
         <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
             <form method="GET" action="{{ route('leave.index') }}" class="md:col-span-3 flex min-w-0 flex-col gap-3 md:flex-row">

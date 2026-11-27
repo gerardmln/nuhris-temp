@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -56,5 +57,62 @@ class EmployeeControllerTest extends TestCase
 
         $response->assertSessionHasErrors('employee_id');
         $this->assertDatabaseMissing('employees', ['email' => 'jane.doe@example.com']);
+    }
+
+    public function test_admin_employee_filters_are_preserved_through_profile_edit_and_update(): void
+    {
+        $admin = User::factory()->create(['user_type' => User::TYPE_ADMIN]);
+        $department = Department::create(['name' => 'ASP']);
+        $employee = Employee::query()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'email' => 'jane.doe@example.com',
+            'employment_type' => 'Admin Support Personnel',
+            'employment_status' => 'regular',
+            'position' => 'Asset Management Office',
+            'department_id' => $department->id,
+            'status' => 'active',
+        ]);
+        $filters = [
+            'search' => 'Jane',
+            'department_id' => (string) $department->id,
+            'employee_class' => 'regular',
+            'status' => 'active',
+            'position' => 'Asset Management Office',
+            'page' => '1',
+        ];
+
+        $this->withSession([
+            'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
+        ])->actingAs($admin)
+            ->get(route('admin.employees.index', $filters))
+            ->assertOk()
+            ->assertSee(route('admin.employees.show', ['employee' => $employee] + $filters))
+            ->assertSee(route('admin.employees.edit', ['employee' => $employee] + $filters));
+
+        $this->get(route('admin.employees.show', ['employee' => $employee] + $filters))
+            ->assertOk()
+            ->assertSee(route('admin.employees.index', $filters));
+
+        $this->get(route('admin.employees.edit', ['employee' => $employee] + $filters))
+            ->assertOk()
+            ->assertSee(route('admin.employees.index', $filters))
+            ->assertSee(route('admin.employees.update', ['employee' => $employee] + $filters));
+
+        $this->put(route('admin.employees.update', ['employee' => $employee] + $filters), [
+            'employee_id' => $employee->employee_id,
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'email' => 'jane.doe@example.com',
+            'employment_type' => 'Admin Support Personnel',
+            'employment_status' => 'probationary',
+            'position' => 'Asset Management Office',
+            'department_id' => $department->id,
+            'status' => 'active',
+        ])->assertRedirect(route('admin.employees.index', $filters));
+
+        $this->get(route('admin.employees.index', $filters))
+            ->assertOk()
+            ->assertDontSee('jane.doe@example.com');
     }
 }

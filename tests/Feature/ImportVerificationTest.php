@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceRecord;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\LeaveBalance;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Services\EmployeeBulkImportService;
 use App\Services\ImportVerificationService;
 use App\Services\LeaveMonitoringService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -135,6 +138,74 @@ class ImportVerificationTest extends TestCase
 
         $this->assertEqualsWithDelta(5.5, LeaveRequest::query()->where('source_leave_id', 'L-1004')->value('days_deducted'), 0.001);
         $this->assertSame('approved', LeaveRequest::query()->where('source_leave_id', 'L-1004')->value('status'));
+    }
+
+    public function test_leave_upload_marks_employees_absent_without_eligible_credits(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-27 12:00:00'));
+
+        $departmentId = Department::query()->create(['name' => 'SACE'])->id;
+        $faculty = Employee::query()->create([
+            'employee_id' => '26-0201',
+            'first_name' => 'Early',
+            'last_name' => 'Faculty',
+            'email' => 'early-faculty@example.com',
+            'department_id' => $departmentId,
+            'position' => 'Instructor',
+            'employment_type' => 'Faculty',
+            'employment_status' => 'regular',
+            'hire_date' => '2025-11-28',
+        ]);
+        $asp = Employee::query()->create([
+            'employee_id' => '26-0202',
+            'first_name' => 'Eligible',
+            'last_name' => 'Admin',
+            'email' => 'eligible-admin@example.com',
+            'department_id' => $departmentId,
+            'position' => 'HR Officer',
+            'employment_type' => 'Admin Support Personnel',
+            'employment_status' => 'probationary',
+            'hire_date' => '2026-05-27',
+        ]);
+        $partTime = Employee::query()->create([
+            'employee_id' => '26-0203',
+            'first_name' => 'Part Time',
+            'last_name' => 'Faculty',
+            'email' => 'part-time-faculty@example.com',
+            'department_id' => $departmentId,
+            'position' => 'Part-Time Faculty',
+            'employment_type' => 'Part-Time Faculty',
+            'employment_status' => 'probationary',
+            'hire_date' => '2020-01-01',
+        ]);
+        $file = $this->excel([
+            ['Leave ID', 'Employee ID', 'Employee Name', 'Application', 'Type', 'Date Filed', 'Date From', 'Date To', 'Total Hours', 'Status'],
+            ['L-FAC', '26-0201', 'Early, Faculty', 'Vacation Leave', 'With Pay', '2026-11-01', '2026-11-27', '2026-11-27', 8, 'APPROVED'],
+            ['L-ASP', '26-0202', 'Eligible, Admin', 'Vacation Leave', 'With Pay', '2026-11-01', '2026-11-27', '2026-11-27', 8, 'APPROVED'],
+            ['L-PT', '26-0203', 'Part Time, Faculty', 'Vacation Leave', 'With Pay', '2026-11-01', '2026-11-27', '2026-11-27', 8, 'APPROVED'],
+        ], 'eligibility_leaves.xlsx');
+
+        $this->as(User::TYPE_HR)->post(route('leaves.upload'), ['leaves_file' => $file])->assertSessionHasNoErrors();
+
+        $this->assertSame('absent', AttendanceRecord::query()->where('employee_id', $faculty->id)->whereDate('record_date', '2026-11-27')->value('status'));
+        $this->assertSame('present', AttendanceRecord::query()->where('employee_id', $asp->id)->whereDate('record_date', '2026-11-27')->value('status'));
+        $this->assertSame('absent', AttendanceRecord::query()->where('employee_id', $partTime->id)->whereDate('record_date', '2026-11-27')->value('status'));
+        $this->assertSame(0.0, (float) LeaveBalance::query()->where('employee_id', $faculty->id)->where('leave_type', 'Vacation Leave')->value('remaining_days'));
+        $this->assertSame(8.0, (float) LeaveBalance::query()->where('employee_id', $asp->id)->where('leave_type', 'Vacation Leave')->value('remaining_days'));
+        $this->assertSame(0.0, (float) LeaveBalance::query()->where('employee_id', $partTime->id)->where('leave_type', 'Vacation Leave')->value('remaining_days'));
+    }
+
+    public function test_hr_and_admin_leave_management_show_the_leave_credit_rules(): void
+    {
+        foreach ([[User::TYPE_HR, 'leave.index'], [User::TYPE_ADMIN, 'admin.leave.index']] as [$userType, $route]) {
+            $this->as($userType)->get(route($route))
+                ->assertOk()
+                ->assertSee('Leave Credit Rules')
+                ->assertSee('At 1 year: 11 VL / 11 SL / 3 EL')
+                ->assertSee('At 6 months: 9 VL / 9 SL / 3 EL')
+                ->assertSee('Part-Time Faculty')
+                ->assertSee('Contractual Faculty');
+        }
     }
 
     public function test_leave_verification_flags_saved_data_that_differs_from_the_file(): void

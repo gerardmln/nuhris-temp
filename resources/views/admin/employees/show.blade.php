@@ -28,7 +28,8 @@
             </div>
 
             <div class="mt-6 flex gap-2">
-                <a href="{{ route('admin.employees.edit', $employee) }}" class="rounded-md bg-blue-600 px-4 py-2 text-white">Edit</a>
+                <a href="{{ route('admin.employees.edit', ['employee' => $employee] + $returnQuery) }}" class="rounded-md bg-blue-600 px-4 py-2 text-white">Edit</a>
+                <a href="{{ route('admin.employees.index', $returnQuery) }}" class="rounded-md border px-4 py-2 text-slate-700">Back</a>
                 <form method="POST" action="{{ route('admin.employees.resend-credentials', $employee) }}">
                     @csrf
                     <button class="rounded-md border px-4 py-2 text-blue-700">Resend Credentials</button>

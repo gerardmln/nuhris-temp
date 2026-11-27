@@ -7,7 +7,7 @@
     <h1 class="text-4xl font-bold text-slate-900 mb-8">Edit DTR Record</h1>
 
     <div class="bg-white rounded-lg shadow p-8 max-w-2xl">
-        <form action="{{ route('admin.dtr.update', $record->id) }}" method="POST">
+        <form action="{{ route('admin.dtr.update', ['record' => $record->id, 'return_route' => $returnRoute] + $returnQuery) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -90,7 +90,7 @@
                 <button type="submit" class="w-full sm:w-auto rounded-lg px-6 py-3 font-semibold text-white shadow-lg transition hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300" style="background-color:#1d4ed8 !important; border:1px solid #1d4ed8 !important; color:#ffffff !important;">
                     Save Changes
                 </button>
-                <a href="{{ route('admin.dtr.index') }}" class="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50">
+                <a href="{{ route($returnRoute, $returnQuery) }}" class="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-700 transition hover:bg-slate-50">
                     Cancel
                 </a>
             </div>

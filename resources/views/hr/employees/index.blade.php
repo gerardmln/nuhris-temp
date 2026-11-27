@@ -70,8 +70,8 @@
                             <td class="px-4 py-3 text-slate-700">{{ $employee->position }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('employees.show', $employee) }}" class="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">View</a>
-                                    <a href="{{ route('employees.edit', $employee) }}" class="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
+                                    <a href="{{ route('employees.show', ['employee' => $employee] + $returnQuery) }}" class="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">View</a>
+                                    <a href="{{ route('employees.edit', ['employee' => $employee] + $returnQuery) }}" class="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
                                     <form method="POST" action="{{ route('employees.destroy', $employee) }}" onsubmit="return confirm('Delete this employee?');">
                                         @csrf
                                         @method('DELETE')

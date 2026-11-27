@@ -155,9 +155,9 @@
                                         <div class="dtr-row-actions-menu absolute right-2 top-full z-50 mt-1 hidden w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                             <div class="py-1">
                                                 @if (!empty($record['attendance_id']))
-                                                    <a href="{{ route('admin.dtr.edit', $record['attendance_id']) }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Edit</a>
+                                                    <a href="{{ route('admin.dtr.edit', ['record' => $record['attendance_id'], 'return_route' => $returnRoute] + $returnQuery) }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Edit</a>
                                                 @elseif (empty($record['is_future']))
-                                                    <form method="POST" action="{{ route('admin.dtr.create') }}">
+                                                    <form method="POST" action="{{ route('admin.dtr.create', ['return_route' => $returnRoute] + $returnQuery) }}">
                                                         @csrf
                                                         <input type="hidden" name="employee_id" value="{{ $employee?->id }}">
                                                         <input type="hidden" name="record_date" value="{{ $record['iso_date'] }}">

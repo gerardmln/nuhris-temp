@@ -15,7 +15,7 @@
                 <p class="text-sm text-slate-600">{{ $employee->department?->name ?? 'Unassigned' }}</p>
                 <p class="mt-2 text-xs text-slate-500">{{ $submission->term_label ?? $submission->semester_label }} {{ $submission->academic_year }}</p>
             </div>
-            <a href="{{ route('admin.schedules.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <a href="{{ route('admin.schedules.index', $returnQuery) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 Back
             </a>
         </div>
@@ -32,7 +32,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.schedules.update', $submission) }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.schedules.update', ['submission' => $submission] + $returnQuery) }}" class="space-y-6">
         @csrf
         @method('PUT')
 

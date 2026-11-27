@@ -391,6 +391,13 @@ class OperationsController extends Controller
             'weeklyWorkHours' => $employee ? $scheduleService->weeklyWorkHoursLabel($scheduleService->approvedSubmissionForDate($employee, $dateFrom)) : 'No schedule available',
             'recordStatus' => $recordStatus,
             'attendanceRange' => $attendanceRange,
+            'returnQuery' => array_filter(
+                array_intersect_key(
+                    $request->query(),
+                    array_flip(['employee_id', 'month', 'year', 'date_from', 'date_to', 'record_status', 'attendance_range', 'employee_class', 'search'])
+                ),
+                'is_scalar'
+            ),
         ]);
     }
 
@@ -818,10 +825,22 @@ class OperationsController extends Controller
                 ->first();
         }
 
-        return redirect()->route('admin.dtr.edit', $record->id);
+        $returnRoute = $request->string('return_route')->toString();
+        if (! in_array($returnRoute, ['admin.dtr.index', 'admin.dtr.view', 'timekeeping.dtr'], true)) {
+            $returnRoute = 'admin.dtr.index';
+        }
+
+        $returnQuery = in_array($returnRoute, ['admin.dtr.view', 'timekeeping.dtr'], true)
+            ? $this->dailyDtrReturnQuery($request)
+            : $this->dtrReturnQuery($request);
+
+        return redirect()->route('admin.dtr.edit', [
+            'record' => $record->id,
+            'return_route' => $returnRoute,
+        ] + $returnQuery);
     }
 
-    public function editDtrRecord(AttendanceRecord $record): View
+    public function editDtrRecord(Request $request, AttendanceRecord $record): View
     {
         $employee = $record->employee;
         $absenceCount = 0;
@@ -834,9 +853,18 @@ class OperationsController extends Controller
             $absenceCount = $scheduleService->countDtrAbsences($employee, $monthStart, $monthEnd);
         }
 
+        $returnRoute = $request->string('return_route')->toString();
+        if (! in_array($returnRoute, ['admin.dtr.index', 'admin.dtr.view', 'timekeeping.dtr'], true)) {
+            $returnRoute = 'admin.dtr.index';
+        }
+
         return view('admin.dtr.edit', [
             'record' => $record,
             'absenceCount' => $absenceCount,
+            'returnRoute' => $returnRoute,
+            'returnQuery' => in_array($returnRoute, ['admin.dtr.view', 'timekeeping.dtr'], true)
+                ? $this->dailyDtrReturnQuery($request)
+                : $this->dtrReturnQuery($request),
         ]);
     }
 
@@ -876,8 +904,44 @@ class OperationsController extends Controller
             ['attendance_record_id' => $record->id, 'record_date' => $record->record_date?->toDateString()]
         );
 
-        return redirect()->route('admin.dtr.index')
+        $returnRoute = $request->string('return_route')->toString();
+        $returnQuery = $this->dtrReturnQuery($request);
+        $redirect = match ($returnRoute) {
+            'admin.dtr.view' => redirect()->route('admin.dtr.view', $this->dailyDtrReturnQuery($request)),
+            'timekeeping.dtr' => redirect()->route('timekeeping.dtr', $this->dailyDtrReturnQuery($request)),
+            default => redirect()->route('admin.dtr.index', $returnQuery),
+        };
+
+        return $redirect
             ->with('success', 'DTR record updated successfully.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dtrReturnQuery(Request $request): array
+    {
+        return array_filter(
+            array_intersect_key(
+                $request->query(),
+                array_flip(['employee_id', 'month', 'year', 'date_from', 'date_to', 'record_status', 'attendance_range', 'employee_class', 'search'])
+            ),
+            'is_scalar'
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dailyDtrReturnQuery(Request $request): array
+    {
+        return array_filter(
+            array_intersect_key(
+                $request->query(),
+                array_flip(['employee', 'month', 'year', 'attendance_range'])
+            ),
+            'is_scalar'
+        );
     }
 
     public function clearEmployeeDtr(Request $request, Employee $employee): RedirectResponse

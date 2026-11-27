@@ -458,15 +458,24 @@ class EmployeeScheduleService
         if ($leaveBalanceService->isPartTimeEmployee($employee)) {
             $status = 'absent';
             $notes = 'Approved leave (part-time employee): '.$leaveLabel;
-        } elseif (($policy['requires_regular'] ?? false) && ! $isRegular) {
+        } elseif (
+            ! $leaveBalanceService->isDeductibleLeaveType($storageType)
+            && ($policy['requires_regular'] ?? false)
+            && ! $isRegular
+        ) {
             $status = 'absent';
             $notes = 'Approved leave (non-regular): '.$leaveLabel;
         } elseif (! empty($policy['requires_wfh_submission'])) {
             $status = ($timeIn || $timeOut) ? 'present' : 'absent';
             $notes = 'Approved leave: '.$leaveLabel;
-        } elseif ($leaveBalanceService->isDeductibleLeaveType($storageType) && $leaveBalanceService->getRemainingBalance($employee, $storageType) <= 0) {
-            $status = 'absent';
-            $notes = 'Approved leave exceeded balance: '.$leaveLabel;
+        } elseif ($leaveBalanceService->isDeductibleLeaveType($storageType)) {
+            if (! $leaveBalanceService->isEligibleForLeaveCreditsOn($employee, $date)) {
+                $status = 'absent';
+                $notes = 'Approved leave before leave-credit eligibility: '.$leaveLabel;
+            } elseif ($leaveBalanceService->getRemainingBalance($employee, $storageType) <= 0) {
+                $status = 'absent';
+                $notes = 'Approved leave exceeded balance: '.$leaveLabel;
+            }
         }
 
         return [

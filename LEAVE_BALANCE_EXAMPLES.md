@@ -1,64 +1,29 @@
 # Leave Balance Calculation Examples
 
-## Scenario 1: Faculty Employee - Year 1 (Just Hired)
+## Scenario 1: Faculty Employee - Before 1 Year
 
 **Employee Details**:
 - Employment Type: Faculty
-- Hire Date: May 1, 2026 (4 months ago, not yet 1 year)
-- Status: Not yet regular
+- Hire Date: May 1, 2026 (4 months ago)
+- Not yet eligible for credits
 
-**Leave Credits Calculation**:
-```
-Condition: Must have 1+ year service to be regular
-Since hired 4 months ago: NOT REGULAR
-
-Base Credits Applied:
-- Vacation Leave: 11 days
-- Sick Leave: 11 days
-- Emergency Leave: 3 days
-
-Accrual: NONE (not yet regular)
-
-Total Credits:
-- Vacation Leave: 11
-- Sick Leave: 11
-- Emergency Leave: 3
-```
-
-**Usage Example**:
-- Approved Vacation Leave: 5 days
-- Approved Sick Leave: 2 days
-
-**Remaining Balance**:
-- Vacation Leave: 11 - 5 = 6 days ✓
-- Sick Leave: 11 - 2 = 9 days ✓
-- Emergency Leave: 3 - 0 = 3 days ✓
+Before completing 1 year of service, credits are **0 VL / 0 SL / 0 EL**. An approved leave during this period is recorded but the employee is marked absent in DTR; it does not consume credits earned later.
 
 ---
 
-## Scenario 2: Faculty Employee - Year 1.5 (Just Became Regular)
+## Scenario 2: Faculty Employee - 1 Year of Service
 
 **Employee Details**:
 - Employment Type: Faculty
 - Hire Date: May 1, 2025 (13 months ago)
-- Status: NOW REGULAR (1+ year service)
+- Has completed 1 year of service
 
 **Leave Credits Calculation**:
 ```
-Condition: 1+ year service = REGULAR ✓
-
-Base Credits: 11 each
-Accrual Years: 1 complete year (May 2025 to May 2026)
-
-Per Year Increment:
-- Vacation Leave: +2
-- Sick Leave: +2
-- Emergency Leave: +0 (fixed)
-
-Total Credits:
-- Vacation Leave: 11 + 2 = 13 days
-- Sick Leave: 11 + 2 = 13 days
-- Emergency Leave: 3 (no increment)
+At the 1-year mark, initial credits begin:
+- Vacation Leave: 11 days
+- Sick Leave: 11 days
+- Emergency Leave: 3 days
 ```
 
 **Usage Example**:
@@ -67,34 +32,29 @@ Total Credits:
 - Approved Emergency Leave: 1 day
 
 **Remaining Balance**:
-- Vacation Leave: 13 - 5 = 8 days ✓
-- Sick Leave: 13 - 3 = 10 days ✓
+- Vacation Leave: 11 - 5 = 6 days
+- Sick Leave: 11 - 3 = 8 days
 - Emergency Leave: 3 - 1 = 2 days ✓
 
 ---
 
-## Scenario 3: Faculty Employee - Year 3 (Long Service)
+## Scenario 3: Faculty Employee - Year 3 and Maximum
 
 **Employee Details**:
 - Employment Type: Faculty
 - Hire Date: May 1, 2023 (3 years ago)
-- Status: REGULAR (1+ year service)
+- Has completed 3 years of service
 
 **Leave Credits Calculation**:
 ```
-Condition: 1+ year service = REGULAR ✓
+- Year 1: 11 VL / 11 SL / 3 EL
+- Year 2: 13 VL / 13 SL / 3 EL
+- Year 3: 15 VL / 15 SL / 3 EL
+- Year 4 and later: remains capped at 15 VL / 15 SL / 3 EL
 
-Base Credits: 11 each
-Accrual Years: 3 complete years
-
-Per Year Increment:
-- Year 1: +2 each (11+2=13)
-- Year 2: +2 each (13+2=15) ← REACHES MAX
-- Year 3: +0 each (already at max 15)
-
-Total Credits (Cannot exceed maximum):
-- Vacation Leave: 15 (max reached in year 2)
-- Sick Leave: 15 (max reached in year 2)
+Total Credits:
+- Vacation Leave: 15
+- Sick Leave: 15
 - Emergency Leave: 3 (never increments)
 ```
 
@@ -110,25 +70,34 @@ Total Credits (Cannot exceed maximum):
 
 ---
 
-## Scenario 4: ASP Employee - Year 1 (Just Hired)
+## Scenario 4: ASP Employee - Before 6 Months
 
 **Employee Details**:
 - Employment Type: Admin Support Personnel
 - Hire Date: May 1, 2026 (4 months ago)
-- Status: Not yet regular
+- Not yet eligible for credits
 
 **Leave Credits Calculation**:
 ```
-Condition: Must have 1+ year service to be regular
-ASP requires 6 months minimum (not yet met for year 1)
-Since hired 4 months ago: NOT REGULAR
-
-Base Credits Applied (ASP Lower Than Faculty):
-- Vacation Leave: 9 days
-- Sick Leave: 9 days
-- Emergency Leave: 3 days
+Before completing 6 months of service, credits are 0 VL / 0 SL / 0 EL.
 
 Total Credits:
+- Vacation Leave: 0
+- Sick Leave: 0
+- Emergency Leave: 0
+```
+
+---
+
+## Scenario 5: ASP Employee - 6 Months of Service
+
+**Employee Details**:
+- Employment Type: Admin Support Personnel
+- Has completed 6 months of service
+
+**Leave Credits Calculation**:
+```
+- Initial ASP credits begin at 6 months.
 - Vacation Leave: 9
 - Sick Leave: 9
 - Emergency Leave: 3
@@ -136,47 +105,16 @@ Total Credits:
 
 ---
 
-## Scenario 5: ASP Employee - Year 1 (Became Regular at 6 Months)
+## Scenario 6: ASP Employee - 1 Year of Service
 
 **Employee Details**:
 - Employment Type: Admin Support Personnel
-- Hire Date: November 1, 2025 (7 months ago)
-- Status: NOW REGULAR (6+ months service)
+- Has completed 1 year of service
 
 **Leave Credits Calculation**:
 ```
-Condition: 6+ months service = REGULAR ✓
-
-Base Credits (ASP): 9 each
-Accrual: YES (regular with service time)
-
-Years of service: 0.58 years (7 months)
-Complete years: 0 (need full year for increment)
-
-Total Credits (no complete year yet):
-- Vacation Leave: 9 (no accrual yet)
-- Sick Leave: 9 (no accrual yet)
-- Emergency Leave: 3
-```
-
----
-
-## Scenario 6: ASP Employee - Year 2 (1.5 Years Service)
-
-**Employee Details**:
-- Employment Type: Admin Support Personnel
-- Hire Date: November 1, 2024 (18 months ago)
-- Status: REGULAR (6+ months service)
-
-**Leave Credits Calculation**:
-```
-Condition: 6+ months service = REGULAR ✓
-
-Base Credits (ASP): 9 each
-Complete years of service: 1
-
-Accrual Calculation:
-- Year 1: +2 each (9+2=11)
+- Initial credits at 6 months: 9 VL / 9 SL / 3 EL
+- At 1 year: +2 VL and +2 SL
 
 Total Credits:
 - Vacation Leave: 11
@@ -186,27 +124,23 @@ Total Credits:
 
 ---
 
-## Scenario 7: Part-Time Faculty (Never Regular)
+## Scenario 7: Part-Time Faculty (No Leave Benefits)
 
 **Employee Details**:
 - Employment Type: Part-Time Faculty
 - Hire Date: May 1, 2022 (4 years ago)
-- Status: NEVER REGULAR (part-time = always irregular)
+- No leave benefits regardless of tenure
 
 **Leave Credits Calculation**:
 ```
-Condition: Part-time employees are NEVER regular
-(Regardless of service time)
-
-Base Credits: NONE
-Accrual: NONE (not regular)
+Part-Time Faculty always have zero leave credits.
 
 Total Credits:
 - Vacation Leave: 0 (not eligible)
 - Sick Leave: 0 (not eligible)
 - Emergency Leave: 0 (not eligible)
 
-Result: No leave balance tracking for part-time
+Approved leave is recorded but does not validate attendance as present in DTR.
 ```
 
 ---
@@ -237,7 +171,7 @@ Result: No leave balance tracking for part-time
 
 **Summary**:
 - Total Deductible Days Used: 18 days
-- Remaining Balance: 15 - 18 = -3 (OVERDRAFT!)
+- Remaining Balance: max(0, 15 - 18) = 0
 - Total Tracked (Non-deductible) Days: 34 days
   - These are recorded but do NOT affect balance
 
@@ -245,20 +179,20 @@ Result: No leave balance tracking for part-time
 
 ## Implementation Notes
 
-1. **Regular Status Check**:
-   - Runs automatically when calculating balances
-   - Checked against hire_date and employment_type
-   - Part-time employees are always irregular
+1. **Eligibility**:
+   - Faculty credits begin at 1 year; ASP credits begin at 6 months.
+   - Part-Time Faculty always have zero credits.
+   - Contractual Faculty retain 3 / 3 / 3 credits per term.
 
 2. **Accrual Timing**:
-   - Currently calculated based on elapsed time
-   - Can be scheduled for specific dates (e.g., Jan 1 yearly)
-   - Respects maximum credits (15 for VL/SL, 3 for EL)
+   - Faculty get +2 VL/SL at years 2 and later; ASP at years 1 and later.
+   - Respects maximum credits (15 for VL/SL, 3 for EL).
 
 3. **Balance Updates**:
    - Updated when leave requests are approved/rejected
    - Recalculated when running `leave-balance:initialize`
-   - No automatic rollover (configurable in future)
+   - Leave used before eligibility does not reduce credits earned later.
+   - The usage period resets every January 1 for most employees; contractual Faculty follow their term.
 
 4. **Leave Request Processing**:
    - Only deductible leaves deduct from balance

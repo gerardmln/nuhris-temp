@@ -111,7 +111,7 @@
                 </div>
 
                 <article class="rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-                    <form method="GET" action="{{ route('employees.index') }}" class="grid grid-cols-1 gap-2 md:grid-cols-6">
+                    <form method="GET" action="{{ route('employees.index') }}" class="grid grid-cols-1 gap-2 md:grid-cols-8">
                         <div class="md:col-span-2">
                             <input
                                 type="text"
@@ -135,6 +135,13 @@
                                 <option value="all" @selected(($filters['employee_class'] ?? 'all') === 'all')>All Employee Types</option>
                                 <option value="regular" @selected(($filters['employee_class'] ?? '') === 'regular')>Regular Employees</option>
                                 <option value="irregular" @selected(($filters['employee_class'] ?? '') === 'irregular')>Probationary Employees</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <select name="status" onchange="this.form.submit()" class="w-full rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                                <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
+                                <option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option>
+                                <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
                             </select>
                         </div>
                     </form>
@@ -259,7 +266,7 @@
                                                         data-employee-hire-date="{{ $employee->hire_date?->format('Y-m-d') }}"
                                                         @click="open = false"
                                                         class="mb-1 block rounded-lg border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50">Quick View Details</a>
-                                                    <a href="{{ route('employees.profile', ['employee' => $employee->id]) }}" @click="open = false" class="mb-1 block rounded-lg border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50">View Profile</a>
+                                                    <a href="{{ route('employees.profile', ['employee' => $employee->id] + $returnQuery) }}" @click="open = false" class="mb-1 block rounded-lg border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50">View Profile</a>
                                                 </div>
                                             </template>
                                         </div>
@@ -696,7 +703,7 @@
             }
             if (detailsStatus) detailsStatus.textContent = status ? status.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase()) : 'N/A';
             if (employeeEditForm && employeeId) {
-                employeeEditForm.action = `/hr/employees/${employeeId}`;
+                employeeEditForm.action = `/hr/employees/${employeeId}${window.location.search}`;
             }
             if (editEmployeeId) editEmployeeId.value = employeeCode;
             if (editEmail) editEmail.value = email;

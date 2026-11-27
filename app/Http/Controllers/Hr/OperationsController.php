@@ -52,6 +52,13 @@ class OperationsController extends Controller
             'employee' => $employee,
             'schedule_summary' => $scheduleService->summarizeSubmission($employee ? $scheduleService->currentSubmission($employee) : null),
             'degrees' => $employee?->credentials ?? collect(),
+            'returnQuery' => array_filter(
+                array_intersect_key(
+                    $request->query(),
+                    array_flip(['search', 'department_id', 'employee_class', 'status', 'position', 'page'])
+                ),
+                'is_scalar'
+            ),
         ]);
     }
 
@@ -560,6 +567,14 @@ class OperationsController extends Controller
                 'attendanceRange' => $attendanceRange,
                 'rangeLabel' => $rangeLabel,
                 'adminView' => $request->routeIs('admin.dtr.view'),
+                'returnRoute' => $request->routeIs('admin.dtr.view') ? 'admin.dtr.view' : 'timekeeping.dtr',
+                'returnQuery' => array_filter(
+                    array_intersect_key(
+                        $request->query(),
+                        array_flip(['employee', 'month', 'year', 'attendance_range'])
+                    ),
+                    'is_scalar'
+                ),
             ]);
         } catch (\Throwable $e) {
             return back()
@@ -1204,6 +1219,7 @@ class OperationsController extends Controller
         $queuedAttendanceRows = [];
         $queuedWfhRequests = [];
         $affectedEmployees = [];
+        $balancesInitialized = [];
 
         foreach ($dataRows as $rowNumber => $row) {
             if (empty(array_filter($row, fn ($v) => $v !== null && $v !== ''))) {
@@ -1244,6 +1260,20 @@ class OperationsController extends Controller
             if (! $startDate) {
                 $skipped++;
                 continue;
+            }
+
+            if (! isset($balancesInitialized[$employee->id])) {
+                app(LeaveBalanceService::class)->initializeOrUpdateBalance($employee);
+                LeaveBalance::query()
+                    ->where('employee_id', $employee->id)
+                    ->get()
+                    ->each(function (LeaveBalance $balance) use ($remainingBalances): void {
+                        $remainingBalances->put(
+                            $balance->employee_id.'|'.$balance->leave_type,
+                            (float) $balance->remaining_days
+                        );
+                    });
+                $balancesInitialized[$employee->id] = true;
             }
 
             $totalHours = (float) ($row[$columnIndex['total_hours']] ?? 0);
@@ -1468,8 +1498,8 @@ class OperationsController extends Controller
             }
 
             // Decide status per rules:
-            // - If leave requires regular employees and employee is non-regular -> Not Present
-            // - For deductible Vacation/Sick: allocate available balance across days; excess -> Not Present
+            // - Non-deductible leaves requiring regular status need an eligible employee
+            // - Deductible leaves require credit eligibility and an available balance
             // - Otherwise (auto-markable leave types) -> Present
             $status = 'absent';
             $notes = 'Approved leave: '.($policy['label'] ?? $storageType);
@@ -1477,11 +1507,18 @@ class OperationsController extends Controller
             if ($leaveBalanceService->isPartTimeEmployee($employee)) {
                 $status = 'absent';
                 $notes = 'Approved leave (part-time employee): '.($policy['label'] ?? $storageType);
-            } elseif (($policy['requires_regular'] ?? false) && ! $isRegular) {
+            } elseif (
+                ! $isDeductible
+                && ($policy['requires_regular'] ?? false)
+                && ! $isRegular
+            ) {
                 $status = 'absent';
                 $notes = 'Approved leave (non-regular): '.($policy['label'] ?? $storageType);
             } elseif ($isDeductible) {
-                if ($allocatable > 0) {
+                if (! $leaveBalanceService->isEligibleForLeaveCreditsOn($employee, $date)) {
+                    $status = 'absent';
+                    $notes = 'Approved leave before leave-credit eligibility: '.($policy['label'] ?? $storageType);
+                } elseif ($allocatable > 0) {
                     $status = 'present';
                     $allocatable -= 1;
                 } else {

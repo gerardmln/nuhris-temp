@@ -165,8 +165,8 @@
                                             class="w-48 max-h-[calc(100vh-1rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
                                             role="menu"
                                         >
-                                            <a href="{{ route('admin.employees.show', $employee) }}" @click="open = false" class="mb-1 block rounded-lg border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50">View Profile</a>
-                                            <a href="{{ route('admin.employees.edit', $employee) }}" @click="open = false" class="mb-1 block rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-center text-sm font-semibold text-blue-800 hover:bg-blue-100">Edit Details</a>
+                                            <a href="{{ route('admin.employees.show', ['employee' => $employee] + $returnQuery) }}" @click="open = false" class="mb-1 block rounded-lg border border-slate-300 px-3 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50">View Profile</a>
+                                            <a href="{{ route('admin.employees.edit', ['employee' => $employee] + $returnQuery) }}" @click="open = false" class="mb-1 block rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-center text-sm font-semibold text-blue-800 hover:bg-blue-100">Edit Details</a>
                                             <form method="POST" action="{{ route('admin.employees.resend-credentials', $employee) }}" @submit="confirmResend($event)" class="mb-1">
                                                 @csrf
                                                 <button type="submit" :disabled="resending" class="w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
