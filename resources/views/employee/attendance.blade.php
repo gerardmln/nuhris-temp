@@ -173,13 +173,14 @@
             </div>
             <form method="GET" action="{{ route('employee.attendance') }}" class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <label for="attendance-period" class="text-sm font-semibold text-slate-700">Month</label>
-                <select id="attendance-period" name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1]; this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
+                <select id="attendance-period" name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1];" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
                     @foreach ($periods as $period)
                         <option value="{{ $period['month'] }}-{{ $period['year'] }}" @selected($period['selected'])>{{ $period['label'] }}</option>
                     @endforeach
                 </select>
                 <input type="hidden" name="month" value="{{ $selectedMonth }}">
                 <input type="hidden" name="year" value="{{ $selectedYear }}">
+                <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
             </form>
         </div>
 

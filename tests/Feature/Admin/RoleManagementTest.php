@@ -46,4 +46,24 @@ class RoleManagementTest extends TestCase
         $this->assertSame(['dashboard', 'employee.dashboard'], $portalRoutes(User::TYPE_HR));
         $this->assertSame(['employee.dashboard'], $portalRoutes(User::TYPE_EMPLOYEE));
     }
+
+    public function test_role_update_returns_to_the_filtered_user_list(): void
+    {
+        $admin = User::factory()->create(['user_type' => User::TYPE_ADMIN]);
+        $user = User::factory()->create(['user_type' => User::TYPE_HR]);
+        $filters = [
+            'search' => $user->email,
+            'role' => (string) User::TYPE_HR,
+            'status' => 'inactive',
+            'department_id' => 'asp',
+        ];
+
+        $this->withSession([
+            'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
+        ])->actingAs($admin)
+            ->put(route('admin.roles.update', ['user' => $user->id] + $filters), [
+                'user_type' => User::TYPE_EMPLOYEE,
+            ])
+            ->assertRedirect(route('admin.roles.index', $filters));
+    }
 }

@@ -27,9 +27,8 @@ class ScheduleManagementController extends Controller
         '3rd Term',
     ];
 
-    public function index(EmployeeScheduleService $scheduleService): View
+    public function index(Request $request, EmployeeScheduleService $scheduleService): View
     {
-        $request = request();
         $search = $request->string('search')->trim()->toString();
         $departmentId = $request->string('department_id')->toString();
         $statusFilter = $request->string('status')->toString() ?: 'all';
@@ -122,7 +121,7 @@ class ScheduleManagementController extends Controller
         ]);
     }
 
-    public function create(?Employee $employee, EmployeeScheduleService $scheduleService): View
+    public function create(Request $request, ?Employee $employee, EmployeeScheduleService $scheduleService): View
     {
         $employees = Employee::query()
             ->with('department')
@@ -137,6 +136,7 @@ class ScheduleManagementController extends Controller
             'employees' => $employees,
             'weekDays' => $scheduleService->weeklyDays(),
             'termLabels' => self::ALLOWED_TERM_LABELS,
+            'returnQuery' => $this->scheduleListQuery($request),
         ]);
     }
 
@@ -237,11 +237,11 @@ class ScheduleManagementController extends Controller
             ]
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', 'Schedule added and approved successfully.');
     }
 
-    public function resetEmployee(Employee $employee): RedirectResponse
+    public function resetEmployee(Request $request, Employee $employee): RedirectResponse
     {
         $submissions = EmployeeScheduleSubmission::query()
             ->with('employee')
@@ -257,7 +257,8 @@ class ScheduleManagementController extends Controller
                 ['employee_id' => $employee->employee_id]
             );
 
-            return back()->with('error', 'This employee has no schedule submissions to reset.');
+            return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
+                ->with('error', 'This employee has no schedule submissions to reset.');
         }
 
         foreach ($submissions as $submission) {
@@ -279,7 +280,7 @@ class ScheduleManagementController extends Controller
             ['employee_id' => $employee->employee_id, 'submissions' => $submissions->count()]
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', $employee->full_name.' schedule was reset successfully.');
     }
 
@@ -317,11 +318,11 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id, 'leave_term_started' => $leaveTermStarted]
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', 'Schedule for '.$submission->employee?->full_name.' has been approved.'.$leaveTermNote);
     }
 
-    public function resetAll(): RedirectResponse
+    public function resetAll(Request $request): RedirectResponse
     {
         DB::transaction(function () {
             EmployeeScheduleSubmission::query()->update([
@@ -344,7 +345,7 @@ class ScheduleManagementController extends Controller
             'Success'
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', 'All schedules were reset. Employees must resubmit before DTR validation resumes.');
     }
 
@@ -467,7 +468,7 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id]
         );
 
-        return redirect()->route('admin.schedules.index')
+        return redirect()->route('admin.schedules.index', $this->scheduleListQuery($request))
             ->with('success', 'Schedule cleared successfully. Employee has been notified.');
     }
 

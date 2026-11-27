@@ -120,7 +120,6 @@
                         var parts = this.value.split('-');
                         this.form.querySelector('[name=month]').value = parts[0];
                         this.form.querySelector('[name=year]').value = parts[1];
-                        this.form.submit();
                     " class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         @if(isset($periods))
                             @foreach($periods as $p)
@@ -132,13 +131,13 @@
                         @endif
                     </select>
 
-                    <select name="employee_class" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="employee_class" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="all" @selected(($employeeClass ?? 'all') === 'all')>All Employee Types</option>
                         <option value="regular" @selected(($employeeClass ?? '') === 'regular')>Regular Employees</option>
                         <option value="irregular" @selected(($employeeClass ?? '') === 'irregular')>Probationary Employees</option>
                     </select>
 
-                    <select name="department_id" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="department_id" class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="" @selected(empty($filters['department_id'] ?? ''))>All Departments</option>
                         <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel (ASP)</option>
                         @if(isset($departments))
@@ -148,7 +147,7 @@
                         @endif
                     </select>
 
-                    <select name="attendance_range" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="attendance_range" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="month" @selected(($filters['attendance_range'] ?? 'month') === 'month')>Total Month</option>
                         <option value="first_half" @selected(($filters['attendance_range'] ?? '') === 'first_half')>1st-15th</option>
                         <option value="second_half" @selected(($filters['attendance_range'] ?? '') === 'second_half')>16th-End</option>
@@ -156,6 +155,7 @@
 
                     <input type="hidden" name="month" value="{{ $selectedMonth ?? now()->month }}">
                     <input type="hidden" name="year" value="{{ $selectedYear ?? now()->year }}">
+                    <button type="submit" class="mt-2 rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d] md:col-span-2">Filter</button>
                 </div>
             </form>
         </div>
@@ -193,7 +193,7 @@
                 @endunless
                 <p class="mt-3 text-xs text-slate-500">Schedule: {{ $card['schedule_summary'] }}</p>
                 <p class="mt-1 text-xs font-semibold text-blue-700">Weekly work hours: {{ $card['weekly_work_hours'] }}</p>
-                <a href="{{ route('timekeeping.dtr', ['employee' => $card['id'], 'month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $filters['attendance_range'] ?? 'month']) }}" class="mt-3 block w-full rounded-md bg-[#00386f] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#002f5d] transition">View DTR</a>
+                <a href="{{ route('timekeeping.dtr', ['employee' => $card['id'], 'month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $filters['attendance_range'] ?? 'month'] + $returnQuery) }}" class="mt-3 block w-full rounded-md bg-[#00386f] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#002f5d] transition">View DTR</a>
             </article>
         @empty
             <div class="col-span-full rounded-xl border border-slate-200 bg-white p-8 text-center">
@@ -210,7 +210,7 @@
                 <h3 class="text-4xl font-bold text-[#1f2b8b]">Upload PDF</h3>
                 <button type="button" data-close-modal class="text-4xl leading-none text-slate-500 hover:text-slate-700">&times;</button>
             </div>
-            <form id="upload-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('biometrics.upload') }}" enctype="multipart/form-data">
+            <form id="upload-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('biometrics.upload', $returnQuery) }}" enctype="multipart/form-data">
                 @csrf
                 <label class="mb-3 block text-2xl font-medium text-slate-700">Attendance File (PDF only)</label>
                 <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 mb-4">

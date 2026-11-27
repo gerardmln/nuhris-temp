@@ -95,7 +95,9 @@ Route::prefix('hr')->middleware(['auth', 'user.type:2', 'privacy.notice'])->grou
             })
             ->forceDelete();
 
-        return redirect()->route('announcements.index')->with('success', $cleared > 0 ? 'All announcements were cleared.' : 'No announcements to clear.');
+        $filters = array_filter($request->only(['search', 'priority', 'page']), 'is_scalar');
+
+        return redirect()->route('announcements.index', $filters)->with('success', $cleared > 0 ? 'All announcements were cleared.' : 'No announcements to clear.');
     })->name('announcements.clear-all');
 
     Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');

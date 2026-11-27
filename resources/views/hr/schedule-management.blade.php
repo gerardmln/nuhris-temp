@@ -18,7 +18,7 @@
                 <h2 class="mt-1 text-3xl font-bold text-slate-900">Schedule Management</h2>
                 <p class="mt-1 text-sm text-slate-600">Review employee-submitted weekly schedules before they become the attendance reference.</p>
             </div>
-            <a href="{{ route('schedules.create') }}" class="inline-flex items-center justify-center rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002f5d]">
+            <a href="{{ route('schedules.create', $returnQuery) }}" class="inline-flex items-center justify-center rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002f5d]">
                 Add Schedule
             </a>
         </div>
@@ -27,14 +27,14 @@
     <div class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
         <form method="GET" action="{{ route('schedules.index') }}" class="grid gap-2 md:grid-cols-4">
             <input type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search employees" class="w-full rounded-md border border-slate-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 md:col-span-2">
-            <select name="department_id" onchange="this.form.submit()" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+            <select name="department_id" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                 <option value="all" @selected(($filters['department_id'] ?? 'all') === 'all')>All Departments</option>
                 <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel</option>
                 @foreach ($departments as $department)
                     <option value="{{ $department->id }}" @selected(($filters['department_id'] ?? '') == $department->id)>{{ $department->name }}</option>
                 @endforeach
             </select>
-            <select name="status" onchange="this.form.submit()" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+            <select name="status" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                 <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
                 <option value="needs_upload" @selected(($filters['status'] ?? '') === 'needs_upload')>Needs Upload</option>
                 <option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Pending</option>
@@ -42,6 +42,7 @@
                 <option value="declined" @selected(($filters['status'] ?? '') === 'declined')>Declined</option>
                 <option value="reset" @selected(($filters['status'] ?? '') === 'reset')>Reset</option>
             </select>
+            <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
         </form>
     </div>
 
@@ -106,26 +107,26 @@
 
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                     @if (! $submission)
-                        <a href="{{ route('schedules.create', ['employee' => $employee]) }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">
+                        <a href="{{ route('schedules.create', ['employee' => $employee] + $returnQuery) }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">
                             Add Schedule
                         </a>
                     @endif
                     @if ($submission && $submission->status === 'pending')
-                        <form method="POST" action="{{ route('schedules.approve', $submission) }}" onsubmit="return confirm('Approve this schedule?');">
+                        <form method="POST" action="{{ route('schedules.approve', ['submission' => $submission] + $returnQuery) }}" onsubmit="return confirm('Approve this schedule?');">
                             @csrf
                             <input type="hidden" name="confirmed" value="1">
                             <input type="hidden" name="review_notes" value="Approved by HR">
                             <button type="submit" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Accept</button>
                         </form>
 
-                        <form method="POST" action="{{ route('schedules.decline', $submission) }}" onsubmit="return confirm('Decline this schedule?');" class="flex items-center gap-2">
+                        <form method="POST" action="{{ route('schedules.decline', ['submission' => $submission] + $returnQuery) }}" onsubmit="return confirm('Decline this schedule?');" class="flex items-center gap-2">
                             @csrf
                             <input type="hidden" name="confirmed" value="1">
                             <input type="text" name="review_notes" placeholder="Reason for decline" class="rounded-md border border-slate-300 px-3 py-2 text-sm" required>
                             <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 shadow-sm ring-1 ring-red-200">Decline</button>
                         </form>
                     @elseif ($submission && $submission->status === 'approved')
-                        <form method="POST" action="{{ route('schedules.clear', $submission) }}" onsubmit="return confirm('Clear this approved schedule? The employee will need to resubmit.');">
+                        <form method="POST" action="{{ route('schedules.clear', ['submission' => $submission] + $returnQuery) }}" onsubmit="return confirm('Clear this approved schedule? The employee will need to resubmit.');">
                             @csrf
                             <input type="hidden" name="confirmed" value="1">
                             <input type="hidden" name="review_notes" value="Cleared by HR">

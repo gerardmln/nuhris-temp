@@ -11,14 +11,14 @@
     <div class="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
         <form method="GET" action="{{ route('admin.wfh-monitoring.index') }}" class="grid grid-cols-1 gap-3 md:grid-cols-8">
             <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search employee, email, or department" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none md:col-span-3">
-            <select name="department_id" onchange="this.form.submit()" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+            <select name="department_id" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                 <option value="all" @selected(($filters['department_id'] ?? 'all') === 'all')>All Departments</option>
                 <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel</option>
                 @foreach ($departments as $department)
                     <option value="{{ $department->id }}" @selected(($filters['department_id'] ?? '') == $department->id)>{{ $department->name }}</option>
                 @endforeach
             </select>
-            <select name="status" onchange="this.form.submit()" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+            <select name="status" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                 <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
                 <option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Pending</option>
                 <option value="approved" @selected(($filters['status'] ?? '') === 'approved')>Approved</option>
@@ -26,6 +26,7 @@
             </select>
             <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
             <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+            <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
         </form>
     </div>
 
@@ -57,7 +58,7 @@
             <button onclick="if(confirm('Clear ALL WFH records? This action cannot be undone.')) { document.getElementById('clear-form').submit(); }" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium">
                 Clear All
             </button>
-            <form id="clear-form" action="{{ route('admin.wfh-monitoring.clear-all') }}" method="POST" style="display:none;">
+            <form id="clear-form" action="{{ route('admin.wfh-monitoring.clear-all', $returnQuery) }}" method="POST" style="display:none;">
                 @csrf
                 @method('DELETE')
             </form>
@@ -109,13 +110,13 @@
                                 <td class="px-4 py-4">
                                     @if ($submission['status'] === 'pending')
                                         <div class="space-y-2">
-                                            <form method="POST" action="{{ route('admin.wfh-monitoring.approve', $submission['id']) }}" onsubmit="return confirm('Approve this WFH submission and update attendance?');">
+                                            <form method="POST" action="{{ route('admin.wfh-monitoring.approve', ['submission' => $submission['id']] + $returnQuery) }}" onsubmit="return confirm('Approve this WFH submission and update attendance?');">
                                                 @csrf
                                                 <input type="hidden" name="confirmed" value="1">
                                                 <button type="submit" class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
                                             </form>
 
-                                            <form method="POST" action="{{ route('admin.wfh-monitoring.decline', $submission['id']) }}" onsubmit="return confirm('Decline this WFH submission?');" class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                            <form method="POST" action="{{ route('admin.wfh-monitoring.decline', ['submission' => $submission['id']] + $returnQuery) }}" onsubmit="return confirm('Decline this WFH submission?');" class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                                 @csrf
                                                 <input type="hidden" name="confirmed" value="1">
                                                 <textarea name="review_notes" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs" placeholder="Reason for decline" required></textarea>
@@ -126,7 +127,7 @@
                                             </form>
 
                                             <button onclick="if(confirm('Delete this WFH submission?')) { document.getElementById('delete-{{ $submission['id'] }}').submit(); }" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Delete</button>
-                                            <form id="delete-{{ $submission['id'] }}" action="{{ route('admin.wfh-monitoring.destroy', $submission['id']) }}" method="POST" style="display:none;">
+                                            <form id="delete-{{ $submission['id'] }}" action="{{ route('admin.wfh-monitoring.destroy', ['submission' => $submission['id']] + $returnQuery) }}" method="POST" style="display:none;">
                                                 @csrf
                                                 @method('DELETE')
                                             </form>
@@ -139,7 +140,7 @@
                                                 <p>No review notes.</p>
                                             @endif
                                             <button onclick="if(confirm('Delete this WFH submission?')) { document.getElementById('delete-{{ $submission['id'] }}').submit(); }" class="block text-red-600 hover:text-red-700 font-medium">Delete</button>
-                                            <form id="delete-{{ $submission['id'] }}" action="{{ route('admin.wfh-monitoring.destroy', $submission['id']) }}" method="POST" style="display:none;">
+                                            <form id="delete-{{ $submission['id'] }}" action="{{ route('admin.wfh-monitoring.destroy', ['submission' => $submission['id']] + $returnQuery) }}" method="POST" style="display:none;">
                                                 @csrf
                                                 @method('DELETE')
                                             </form>

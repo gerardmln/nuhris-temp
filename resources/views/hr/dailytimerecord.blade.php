@@ -25,7 +25,7 @@
             </div>
         @endif
 
-        <a href="{{ route(($adminView ?? false) ? 'admin.dtr.index' : 'timekeeping.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900" data-testid="back-to-timekeeping">
+        <a href="{{ route(($adminView ?? false) ? 'admin.dtr.index' : 'timekeeping.index', array_merge($listReturnQuery, ['month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $attendanceRange ?? 'month'])) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900" data-testid="back-to-timekeeping">
             <span>&larr;</span>
             Back to Time Keeping
         </a>
@@ -40,9 +40,9 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     {{-- Period Selector --}}
-                    <form method="GET" action="{{ route(($adminView ?? false) ? 'admin.dtr.view' : 'timekeeping.dtr') }}" class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center" data-testid="dtr-period-form">
+                    <form method="GET" action="{{ route(($adminView ?? false) ? 'admin.dtr.view' : 'timekeeping.dtr', $listReturnQuery) }}" class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center" data-testid="dtr-period-form">
                         <input type="hidden" name="employee" value="{{ $employee?->id }}">
-                        <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1]; this.form.submit();"
+                        <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1];"
                                 data-testid="dtr-period-selector"
                                 class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
                             @foreach ($periods as $period)
@@ -51,7 +51,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <select name="attendance_range" onchange="this.form.submit();"
+                        <select name="attendance_range"
                                 data-testid="dtr-attendance-range-selector"
                                 class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
                             <option value="month" @selected(($attendanceRange ?? 'month') === 'month')>Total Month</option>
@@ -60,6 +60,7 @@
                         </select>
                         <input type="hidden" name="month" value="{{ $selectedMonth }}">
                         <input type="hidden" name="year" value="{{ $selectedYear }}">
+                        <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
                     </form>
                 </div>
             </div>
@@ -128,11 +129,15 @@
                 </thead>
                 <tbody class="divide-y divide-slate-200">
                     @foreach ($records as $record)
+                        @php
+                            $timeIn = $record['time_in'] === '-' ? '-' : \Carbon\Carbon::createFromFormat('H:i', $record['time_in'])->format('g:i A');
+                            $timeOut = $record['time_out'] === '-' ? '-' : \Carbon\Carbon::createFromFormat('H:i', $record['time_out'])->format('g:i A');
+                        @endphp
                         <tr class="{{ $record['status'] === 'Weekend' ? 'bg-slate-50 text-slate-400' : ($record['status'] === 'Non-working day' ? 'bg-amber-50/40' : ($record['status'] === 'Not Present' ? 'bg-red-50/40' : '')) }}">
                             <td class="px-3 py-2">{{ $record['date'] }}</td>
                             <td class="px-3 py-2">{{ $record['day'] }}</td>
-                            <td class="px-3 py-2 {{ ($record['tardiness_minutes'] ?? 0) > 0 ? 'font-semibold text-red-600' : '' }}">{{ $record['time_in'] }}</td>
-                            <td class="px-3 py-2 {{ ($record['undertime_minutes'] ?? 0) > 0 ? 'font-semibold text-red-600' : '' }}">{{ $record['time_out'] }}</td>
+                            <td class="px-3 py-2 {{ ($record['tardiness_minutes'] ?? 0) > 0 ? 'font-semibold text-red-600' : '' }}">{{ $timeIn }}</td>
+                            <td class="px-3 py-2 {{ ($record['undertime_minutes'] ?? 0) > 0 ? 'font-semibold text-red-600' : '' }}">{{ $timeOut }}</td>
                             <td class="px-3 py-2">{{ $record['tardiness_minutes'] ? $record['tardiness_minutes'].' min' : '-' }}</td>
                             <td class="px-3 py-2">{{ $record['undertime_minutes'] ? $record['undertime_minutes'].' min' : '-' }}</td>
                             <td class="px-3 py-2">

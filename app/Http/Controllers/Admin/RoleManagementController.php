@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Models\Department;
 use App\Models\User;
 use App\Services\AuditLogService;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
 
 class RoleManagementController extends Controller
 {
+    use PreservesListFilters;
+
     public function index(Request $request): View
     {
         $search = $request->string('search')->toString();
@@ -77,6 +80,7 @@ class RoleManagementController extends Controller
                 'status' => $statusFilter,
                 'department_id' => $departmentId,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'role', 'status', 'department_id']),
         ]);
     }
 
@@ -98,7 +102,7 @@ class RoleManagementController extends Controller
                     ['user_id' => $user->id, 'email' => $user->email]
                 );
 
-                return redirect()->back()
+                return redirect()->route('admin.roles.index', $this->listFilterQuery($request, ['search', 'role', 'status', 'department_id']))
                     ->with('error', 'Cannot remove the last Admin user. At least one Admin must exist.');
             }
         }
@@ -116,7 +120,7 @@ class RoleManagementController extends Controller
             ['user_id' => $user->id, 'email' => $user->email, 'from' => $oldRole, 'to' => $newRole]
         );
 
-        return redirect()->route('admin.roles.index')
+        return redirect()->route('admin.roles.index', $this->listFilterQuery($request, ['search', 'role', 'status', 'department_id']))
             ->with('success', "{$user->name}'s role has been changed from {$oldRole} to {$newRole}.");
     }
 

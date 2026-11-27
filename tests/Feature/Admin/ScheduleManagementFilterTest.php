@@ -46,6 +46,11 @@ class ScheduleManagementFilterTest extends TestCase
             ->assertOk()
             ->assertSee(route('admin.schedules.edit', ['submission' => $submission] + $filters));
 
+        $this->get(route('admin.schedules.create', $filters))
+            ->assertOk()
+            ->assertSee(route('admin.schedules.index', $filters))
+            ->assertSee(route('admin.schedules.store', $filters));
+
         $this->get(route('admin.schedules.edit', ['submission' => $submission] + $filters))
             ->assertOk()
             ->assertSee(route('admin.schedules.index', $filters))
@@ -62,5 +67,21 @@ class ScheduleManagementFilterTest extends TestCase
                 ],
             ],
         ])->assertRedirect(route('admin.schedules.index', $filters));
+    }
+
+    public function test_reset_action_returns_to_the_filtered_schedule_list(): void
+    {
+        $admin = User::factory()->create(['user_type' => User::TYPE_ADMIN]);
+        $filters = [
+            'search' => 'Jane',
+            'department_id' => 'asp',
+            'status' => 'pending',
+        ];
+
+        $this->withSession([
+            'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
+        ])->actingAs($admin)
+            ->delete(route('admin.schedules.reset-all', $filters))
+            ->assertRedirect(route('admin.schedules.index', $filters));
     }
 }

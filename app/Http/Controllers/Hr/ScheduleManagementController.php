@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hr;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Models\Announcement;
 use App\Models\AnnouncementNotification;
 use App\Models\Department;
@@ -21,15 +22,16 @@ use Illuminate\View\View;
 
 class ScheduleManagementController extends Controller
 {
+    use PreservesListFilters;
+
     private const ALLOWED_TERM_LABELS = [
         '1st Term',
         '2nd Term',
         '3rd Term',
     ];
 
-    public function index(EmployeeScheduleService $scheduleService): View
+    public function index(Request $request, EmployeeScheduleService $scheduleService): View
     {
-        $request = request();
         $search = $request->string('search')->trim()->toString();
         $departmentId = $request->string('department_id')->toString();
         $statusFilter = $request->string('status')->toString() ?: 'all';
@@ -106,10 +108,11 @@ class ScheduleManagementController extends Controller
                 'department_id' => $departmentId,
                 'status' => $statusFilter,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'status']),
         ]);
     }
 
-    public function create(?Employee $employee, EmployeeScheduleService $scheduleService): View
+    public function create(Request $request, ?Employee $employee, EmployeeScheduleService $scheduleService): View
     {
         $employees = Employee::query()
             ->with('department')
@@ -124,6 +127,7 @@ class ScheduleManagementController extends Controller
             'employees' => $employees,
             'weekDays' => $scheduleService->weeklyDays(),
             'termLabels' => self::ALLOWED_TERM_LABELS,
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'status']),
         ]);
     }
 
@@ -224,7 +228,7 @@ class ScheduleManagementController extends Controller
             ]
         );
 
-        return redirect()->route('schedules.index')
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
             ->with('success', 'Schedule added and approved successfully.');
     }
 
@@ -270,7 +274,8 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id, 'leave_term_started' => $leaveTermStarted]
         );
 
-        return back()->with('success', 'Schedule approved successfully.'.$leaveTermNote);
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
+            ->with('success', 'Schedule approved successfully.'.$leaveTermNote);
     }
 
     public function clear(Request $request, EmployeeScheduleSubmission $submission): RedirectResponse
@@ -311,7 +316,8 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id]
         );
 
-        return back()->with('success', 'Approved schedule cleared successfully.');
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
+            ->with('success', 'Approved schedule cleared successfully.');
     }
 
     public function resetEmployee(Request $request, Employee $employee): RedirectResponse
@@ -355,7 +361,8 @@ class ScheduleManagementController extends Controller
             ['employee_id' => $employee->employee_id, 'submissions' => $submissions->count()]
         );
 
-        return back()->with('success', $employee->full_name.' schedule was reset successfully.');
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
+            ->with('success', $employee->full_name.' schedule was reset successfully.');
     }
 
     public function decline(Request $request, EmployeeScheduleSubmission $submission): RedirectResponse
@@ -390,7 +397,8 @@ class ScheduleManagementController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id, 'review_notes' => $validated['review_notes']]
         );
 
-        return back()->with('success', 'Schedule declined. The employee has been notified.');
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
+            ->with('success', 'Schedule declined. The employee has been notified.');
     }
 
     public function resetSemester(Request $request, EmployeeScheduleService $scheduleService): RedirectResponse
@@ -412,7 +420,8 @@ class ScheduleManagementController extends Controller
             ['submissions' => $resetCount]
         );
 
-        return back()->with('success', 'All schedules were reset. Employees must resubmit before DTR validation resumes.');
+        return redirect()->route('schedules.index', $this->listFilterQuery($request, ['search', 'department_id', 'status']))
+            ->with('success', 'All schedules were reset. Employees must resubmit before DTR validation resumes.');
     }
 
     private function notifyEmployee(Request $request, EmployeeScheduleSubmission $submission, string $title, string $content): void

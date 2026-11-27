@@ -64,4 +64,38 @@ class EmployeeControllerTest extends TestCase
             ->assertOk()
             ->assertDontSee('jane.doe@example.com');
     }
+
+    public function test_timekeeping_filters_require_explicit_submission_and_follow_dtr_navigation(): void
+    {
+        $hr = User::factory()->create(['user_type' => User::TYPE_HR]);
+        $department = Department::query()->create(['name' => 'Timekeeping Test']);
+        $employee = Employee::query()->create([
+            'first_name' => 'Sam',
+            'last_name' => 'Staff',
+            'email' => 'sam.staff@example.com',
+            'employment_type' => 'Faculty',
+            'employment_status' => 'regular',
+            'position' => 'Instructor',
+            'department_id' => $department->id,
+            'status' => 'active',
+        ]);
+        $filters = [
+            'search' => 'Sam',
+            'department_id' => (string) $department->id,
+            'employee_class' => 'all',
+            'attendance_range' => 'month',
+            'month' => (string) now()->month,
+            'year' => (string) now()->year,
+        ];
+
+        $this->withSession([
+            'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
+        ])->actingAs($hr)
+            ->get(route('timekeeping.index', $filters))
+            ->assertOk()
+            ->assertSee('Filter')
+            ->assertSee(route('timekeeping.dtr', ['employee' => $employee->id]), false)
+            ->assertSee('search=Sam', false)
+            ->assertSee('department_id='.$department->id, false);
+    }
 }

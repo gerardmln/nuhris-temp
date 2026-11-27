@@ -29,23 +29,24 @@
             <div class="grid grid-cols-5 gap-3">
                     <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, email, employee ID" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none col-span-2">
 
-                <select name="department_id" onchange="this.form.submit()" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none col-span-3">
+                <select name="department_id" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none col-span-3">
                     <option value="">All Departments</option>
                     @foreach ($departments as $department)
                         <option value="{{ $department->id }}" @selected($filters['department_id'] == $department->id)>{{ $department->name }}</option>
                     @endforeach
                 </select>
-                    <select name="status" onchange="this.form.submit()" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="status" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
                         <option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option>
                         <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
                     </select>
                     <input type="text" name="position" value="{{ $filters['position'] ?? '' }}" placeholder="Position" class="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
-                    <select name="employee_class" onchange="this.form.submit()" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="employee_class" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="all" @selected(($filters['employee_class'] ?? 'all') === 'all')>All Employee Types</option>
                         <option value="regular" @selected(($filters['employee_class'] ?? '') === 'regular')>Regular Employees</option>
                         <option value="irregular" @selected(($filters['employee_class'] ?? '') === 'irregular')>Probationary Employees</option>
                     </select>
+                    <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
             </div>
         </form>
 

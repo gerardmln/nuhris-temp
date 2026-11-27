@@ -96,18 +96,19 @@
                     placeholder="Search by name, email, ID, or department..."
                     class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none md:w-[28rem] md:flex-none"
                 >
-                <select name="department_id" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-blue-400 focus:outline-none md:w-[17rem] md:flex-none">
+                <select name="department_id" class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-blue-400 focus:outline-none md:w-[17rem] md:flex-none">
                     <option value="">All Departments</option>
                     <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel</option>
                     @foreach ($departments as $department)
                         <option value="{{ $department->id }}" @selected(($filters['department_id'] ?? '') == $department->id)>{{ $department->name }}</option>
                     @endforeach
                 </select>
-                <select name="employee_class" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-blue-400 focus:outline-none md:w-[17rem] md:flex-none">
+                <select name="employee_class" class="w-full min-w-0 rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-blue-400 focus:outline-none md:w-[17rem] md:flex-none">
                     <option value="all" @selected(($filters['employee_class'] ?? 'all') === 'all')>All Employee Types</option>
                     <option value="regular" @selected(($filters['employee_class'] ?? '') === 'regular')>Regular Employees</option>
                     <option value="irregular" @selected(($filters['employee_class'] ?? '') === 'irregular')>Probationary Employees</option>
                 </select>
+                <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
             </form>
         </div>
     </article>
@@ -172,7 +173,7 @@
                 <div><h3 class="text-3xl font-bold text-[#1f2b8b]">Upload Leave Applications</h3><p class="mt-1 text-sm text-slate-500">Excel export from the HR system. Max 10 MB.</p></div>
                 <button type="button" data-close-modal class="text-4xl leading-none text-slate-500 hover:text-slate-700">&times;</button>
             </div>
-            <form id="upload-leaves-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('leaves.upload') }}" enctype="multipart/form-data">
+            <form id="upload-leaves-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('leaves.upload', $returnQuery) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 mb-4">
                     <p class="font-semibold">Employee ID Format Flexible</p>

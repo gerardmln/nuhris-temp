@@ -16,19 +16,19 @@
                    <p class="mt-1 text-sm text-slate-600">Review submitted weekly schedules, edit them, or clear them when needed.</p>
             </div>
             <div class="flex flex-col gap-3 sm:flex-row">
-                <a href="{{ route('admin.schedules.create') }}" class="inline-flex items-center justify-center rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002f5d]">
+                <a href="{{ route('admin.schedules.create', $returnQuery) }}" class="inline-flex items-center justify-center rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#002f5d]">
                     Add Schedule
                 </a>
                 <form method="GET" action="{{ route('admin.schedules.index') }}" class="grid gap-2 sm:grid-cols-4">
                     <input type="search" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search employees" class="w-full rounded-md border border-slate-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:col-span-2 sm:w-72">
-                    <select name="department_id" onchange="this.form.submit()" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    <select name="department_id" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                         <option value="all" @selected(($filters['department_id'] ?? 'all') === 'all')>All Departments</option>
                         <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->id }}" @selected(($filters['department_id'] ?? '') == $department->id)>{{ $department->name }}</option>
                         @endforeach
                     </select>
-                    <select name="status" onchange="this.form.submit()" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
+                    <select name="status" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none">
                         <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
                         <option value="needs_upload" @selected(($filters['status'] ?? '') === 'needs_upload')>Needs Upload</option>
                         <option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Pending</option>
@@ -36,8 +36,9 @@
                         <option value="declined" @selected(($filters['status'] ?? '') === 'declined')>Declined</option>
                         <option value="reset" @selected(($filters['status'] ?? '') === 'reset')>Reset</option>
                     </select>
+                    <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
                 </form>
-                <form method="POST" action="{{ route('admin.schedules.reset-all') }}" onsubmit="return confirm('Clear all schedules? Employees will need to resubmit their weekly schedules.');">
+                <form method="POST" action="{{ route('admin.schedules.reset-all', $returnQuery) }}" onsubmit="return confirm('Clear all schedules? Employees will need to resubmit their weekly schedules.');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
@@ -127,12 +128,12 @@
 
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                     @if (! $submission)
-                        <a href="{{ route('admin.schedules.create', ['employee' => $employee]) }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">
+                        <a href="{{ route('admin.schedules.create', ['employee' => $employee] + $returnQuery) }}" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">
                             Add Schedule
                         </a>
                     @endif
                     @if ($submission && $submission->status === 'pending')
-                        <form method="POST" action="{{ route('admin.schedules.approve', $submission) }}" onsubmit="return confirm('Approve this schedule?');">
+                        <form method="POST" action="{{ route('admin.schedules.approve', ['submission' => $submission] + $returnQuery) }}" onsubmit="return confirm('Approve this schedule?');">
                             @csrf
                             <input type="hidden" name="review_notes" value="Approved by Admin">
                             <button type="submit" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
@@ -144,7 +145,7 @@
                             <a href="{{ route('admin.schedules.edit', ['submission' => $submission] + $returnQuery) }}" class="inline-flex items-center justify-center rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-[#00386f] hover:bg-[#002f5d]">
                                 Edit Schedule
                             </a>
-                            <form method="POST" action="{{ route('admin.schedules.clear', $submission) }}" onsubmit="return confirm('Clear this schedule? The employee will need to resubmit.');" class="inline">
+                            <form method="POST" action="{{ route('admin.schedules.clear', ['submission' => $submission] + $returnQuery) }}" onsubmit="return confirm('Clear this schedule? The employee will need to resubmit.');" class="inline">
                                 @csrf
                                 <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
                                     Clear Schedule

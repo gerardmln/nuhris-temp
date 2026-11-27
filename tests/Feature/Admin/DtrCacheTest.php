@@ -52,9 +52,19 @@ class DtrCacheTest extends TestCase
 
         $response = $this->withSession([
             'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
-        ])->actingAs($admin)->post(route('admin.dtr.clear-cache'));
+        ])->actingAs($admin)->post(route('admin.dtr.clear-cache', [
+            'search' => 'Employee',
+            'employee_class' => 'regular',
+            'record_status' => 'present',
+            'attendance_range' => 'month',
+        ]));
 
-        $response->assertRedirect(route('admin.dtr.index'));
+        $response->assertRedirect(route('admin.dtr.index', [
+            'search' => 'Employee',
+            'employee_class' => 'regular',
+            'record_status' => 'present',
+            'attendance_range' => 'month',
+        ]));
         $response->assertSessionHas('success', 'Cleared 1 DTR upload cache entry.');
         $this->assertDatabaseCount('attendance_records', 1);
         $this->assertDatabaseMissing('admin_audit_logs', [
@@ -126,6 +136,11 @@ class DtrCacheTest extends TestCase
             'year' => (string) $recordDate->year,
             'attendance_range' => 'month',
         ];
+        $this->get(route('admin.dtr.view', $detailQuery))
+            ->assertOk()
+            ->assertSee('5:00 PM')
+            ->assertDontSee('17:00', false);
+
         $detailEditParameters = ['record' => $record->id, 'return_route' => 'admin.dtr.view'] + $detailQuery;
 
         $this->get(route('admin.dtr.edit', $detailEditParameters))
@@ -175,9 +190,17 @@ class DtrCacheTest extends TestCase
 
         $response = $this->withSession([
             'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
-        ])->actingAs($admin)->post(route('admin.leave.clear-cache'));
+        ])->actingAs($admin)->post(route('admin.leave.clear-cache', [
+            'search' => 'Leave',
+            'department_id' => 'asp',
+            'employee_class' => 'regular',
+        ]));
 
-        $response->assertRedirect(route('admin.leave.index'));
+        $response->assertRedirect(route('admin.leave.index', [
+            'search' => 'Leave',
+            'department_id' => 'asp',
+            'employee_class' => 'regular',
+        ]));
         $response->assertSessionHas('success', 'Cleared 1 leave file cache entry.');
         $this->assertDatabaseCount('leave_requests', 1);
         $this->assertDatabaseMissing('admin_audit_logs', [
@@ -190,5 +213,23 @@ class DtrCacheTest extends TestCase
             'module' => 'Leave Management',
             'description' => 'Cleared 1 leave file cache entry.',
         ]);
+    }
+
+    public function test_admin_wfh_clear_all_returns_to_the_filtered_list(): void
+    {
+        $admin = User::factory()->create(['user_type' => User::TYPE_ADMIN]);
+        $filters = [
+            'search' => 'Alex',
+            'department_id' => 'asp',
+            'status' => 'pending',
+            'date_from' => '2026-10-01',
+            'date_to' => '2026-10-31',
+        ];
+
+        $this->withSession([
+            'privacy_notice_acknowledged_version' => config('privacy.notice_version'),
+        ])->actingAs($admin)
+            ->delete(route('admin.wfh-monitoring.clear-all', $filters))
+            ->assertRedirect(route('admin.wfh-monitoring.index', $filters));
     }
 }

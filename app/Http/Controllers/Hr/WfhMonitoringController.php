@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hr;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Models\Announcement;
 use App\Models\AnnouncementNotification;
 use App\Models\Department;
@@ -21,6 +22,8 @@ use Illuminate\View\View;
 
 class WfhMonitoringController extends Controller
 {
+    use PreservesListFilters;
+
     public function index(Request $request): View
     {
         $search = $request->string('search')->toString();
@@ -97,6 +100,7 @@ class WfhMonitoringController extends Controller
                 'date_from' => $request->string('date_from')->toString(),
                 'date_to' => $request->string('date_to')->toString(),
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']),
         ]);
     }
 
@@ -112,7 +116,7 @@ class WfhMonitoringController extends Controller
             ['deleted' => $deleted]
         );
 
-        return redirect()->route('wfh-monitoring.index')->with('success', $deleted > 0
+        return redirect()->route('wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))->with('success', $deleted > 0
             ? 'All WFH monitoring records were cleared. Attendance records were left untouched.'
             : 'No WFH monitoring records to clear.');
     }
@@ -205,7 +209,8 @@ class WfhMonitoringController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee->employee_id, 'wfh_date' => $submission->wfh_date?->toDateString()]
         );
 
-        return back()->with('success', 'WFH submission approved and attendance was updated.');
+        return redirect()->route('wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
+            ->with('success', 'WFH submission approved and attendance was updated.');
     }
 
     public function decline(Request $request, WfhMonitoringSubmission $submission): RedirectResponse
@@ -260,7 +265,8 @@ class WfhMonitoringController extends Controller
             ['submission_id' => $submission->id, 'employee_id' => $submission->employee?->employee_id, 'wfh_date' => $submission->wfh_date?->toDateString(), 'review_notes' => $validated['review_notes']]
         );
 
-        return back()->with('success', 'WFH submission declined. The employee has been notified.');
+        return redirect()->route('wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
+            ->with('success', 'WFH submission declined. The employee has been notified.');
     }
 
     public function viewFile(Request $request, WfhMonitoringSubmission $submission, SupabaseStorageService $storage): View|RedirectResponse

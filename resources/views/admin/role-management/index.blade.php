@@ -27,24 +27,25 @@
 
     <form method="GET" action="{{ route('admin.roles.index') }}" class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))_minmax(0,1.5fr)]">
         <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search by name or email" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
-        <select name="role" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+        <select name="role" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
             <option value="all" @selected(($filters['role'] ?? 'all') === 'all')>All Roles</option>
             @foreach($roles as $role)
                 <option value="{{ $role['value'] }}" @selected((string) ($filters['role'] ?? '') === (string) $role['value'])>{{ $role['short'] }}</option>
             @endforeach
         </select>
-        <select name="status" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+        <select name="status" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
             <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>All Statuses</option>
             <option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option>
             <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
         </select>
-        <select name="department_id" onchange="this.form.submit()" class="min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+        <select name="department_id" class="min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
             <option value="all" @selected(($filters['department_id'] ?? 'all') === 'all')>All Departments</option>
             <option value="asp" @selected(($filters['department_id'] ?? '') === 'asp')>Admin Support Personnel</option>
             @foreach ($departments as $department)
                 <option value="{{ $department->id }}" @selected(($filters['department_id'] ?? '') == $department->id)>{{ $department->name }}</option>
             @endforeach
         </select>
+        <button type="submit" class="rounded-lg bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
     </form>
 
     <!-- Users List -->
@@ -80,7 +81,7 @@
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $user['status'] }}</td>
                         <td class="whitespace-nowrap px-4 py-3">
-                            <form action="{{ route('admin.roles.update', $user['id']) }}" method="POST" class="flex items-center gap-2">
+                            <form action="{{ route('admin.roles.update', ['user' => $user['id']] + $returnQuery) }}" method="POST" class="flex items-center gap-2">
                                 @csrf
                                 @method('PUT')
                                 <select name="user_type" class="w-40 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">

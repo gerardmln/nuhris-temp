@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hr;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Models\Announcement;
 use App\Models\AnnouncementNotification;
 use App\Models\AdminAuditLog;
@@ -34,6 +35,8 @@ use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
 
 class OperationsController extends Controller
 {
+    use PreservesListFilters;
+
     public function profile(Request $request): View
     {
         $scheduleService = app(EmployeeScheduleService::class);
@@ -494,6 +497,7 @@ class OperationsController extends Controller
                 'search' => $search,
                 'attendance_range' => $attendanceRange,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['month', 'year', 'search', 'employee_class', 'department_id', 'attendance_range']),
         ]);
     }
 
@@ -571,10 +575,11 @@ class OperationsController extends Controller
                 'returnQuery' => array_filter(
                     array_intersect_key(
                         $request->query(),
-                        array_flip(['employee', 'month', 'year', 'attendance_range'])
+                        array_flip(['employee', 'month', 'year', 'attendance_range', 'search', 'department_id', 'employee_class', 'record_status'])
                     ),
                     'is_scalar'
                 ),
+                'listReturnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'employee_class']),
             ]);
         } catch (\Throwable $e) {
             return back()
@@ -857,6 +862,7 @@ class OperationsController extends Controller
                 'department_id' => $departmentId,
                 'employee_class' => $employeeClass,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'employee_class']),
             'monthOptions' => $monthOptions,
             'stats' => [
                 'total_employees' => $leaveCards->count(),
@@ -1018,7 +1024,9 @@ class OperationsController extends Controller
                 ...$this->extractionStats($extraction),
             ]);
 
-            return back()
+            $returnRoute = $request->routeIs('admin.leave.upload') ? 'admin.leave.index' : 'leave.index';
+
+            return redirect()->route($returnRoute, $this->listFilterQuery($request, ['search', 'department_id', 'employee_class']))
                 ->with('success', $message)
                 ->with('unmatched_employees', array_keys($unmatchedEmployees))
                 ->with('applied_employees', array_keys($appliedEmployees))

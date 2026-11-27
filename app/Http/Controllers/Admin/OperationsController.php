@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Http\Controllers\Hr\OperationsController as HrOperationsController;
 use App\Models\AdminAuditLog;
 use App\Models\Announcement;
@@ -35,6 +36,8 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class OperationsController extends Controller
 {
+    use PreservesListFilters;
+
     protected SupabaseStorageService $storage;
     public function __construct(SupabaseStorageService $storage)
     {
@@ -398,6 +401,7 @@ class OperationsController extends Controller
                 ),
                 'is_scalar'
             ),
+            'listReturnQuery' => $this->listFilterQuery($request, ['search', 'employee_class', 'record_status']),
         ]);
     }
 
@@ -661,7 +665,7 @@ class OperationsController extends Controller
         }
     }
 
-    public function clearDtrCache(): RedirectResponse
+    public function clearDtrCache(Request $request): RedirectResponse
     {
         $uploadLogs = AdminAuditLog::query()
             ->where('module', 'DTR')
@@ -677,7 +681,7 @@ class OperationsController extends Controller
             'attendance_records_affected' => false,
         ]);
 
-        return redirect()->route('admin.dtr.index')
+        return redirect()->route('admin.dtr.index', $this->dtrReturnQuery($request))
             ->with('success', $deleted > 0
                 ? "Cleared {$deleted} DTR upload cache {$entryLabel}."
                 : 'DTR upload cache is already clear. Attendance records were not changed.');
@@ -938,7 +942,7 @@ class OperationsController extends Controller
         return array_filter(
             array_intersect_key(
                 $request->query(),
-                array_flip(['employee', 'month', 'year', 'attendance_range'])
+                array_flip(['employee', 'month', 'year', 'attendance_range', 'search', 'department_id', 'employee_class', 'record_status'])
             ),
             'is_scalar'
         );
@@ -960,11 +964,12 @@ class OperationsController extends Controller
             'deleted' => $deleted,
         ]);
 
-        return redirect()->route('admin.dtr.index', [
-            'employee_id' => $employee->id,
-            'month' => $dateFrom->month,
-            'year' => $dateFrom->year,
-        ])->with('success', $deleted > 0
+        $returnQuery = $this->dtrReturnQuery($request);
+        $returnQuery['employee_id'] = $employee->id;
+        $returnQuery['month'] = $dateFrom->month;
+        $returnQuery['year'] = $dateFrom->year;
+
+        return redirect()->route('admin.dtr.index', $returnQuery)->with('success', $deleted > 0
             ? "Cleared {$deleted} DTR record(s) for {$employee->full_name}."
             : "No DTR records found for {$employee->full_name} in the selected period.");
     }
@@ -983,10 +988,12 @@ class OperationsController extends Controller
             'deleted' => $deleted,
         ]);
 
-        return redirect()->route('admin.dtr.index', [
-            'month' => $dateFrom->month,
-            'year' => $dateFrom->year,
-        ])->with('success', $deleted > 0
+        $returnQuery = $this->dtrReturnQuery($request);
+        unset($returnQuery['employee_id']);
+        $returnQuery['month'] = $dateFrom->month;
+        $returnQuery['year'] = $dateFrom->year;
+
+        return redirect()->route('admin.dtr.index', $returnQuery)->with('success', $deleted > 0
             ? "Cleared {$deleted} DTR record(s) for the selected period."
             : 'No DTR records found for the selected period.');
     }
@@ -1090,10 +1097,11 @@ class OperationsController extends Controller
                 'date_from' => $request->string('date_from')->toString(),
                 'date_to' => $request->string('date_to')->toString(),
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']),
         ]);
     }
 
-    public function clearAllWfh(): RedirectResponse
+    public function clearAllWfh(Request $request): RedirectResponse
     {
         $count = WfhMonitoringSubmission::query()->count();
 
@@ -1116,7 +1124,7 @@ class OperationsController extends Controller
             'count' => $count,
         ]);
 
-        return redirect()->route('admin.wfh-monitoring.index')
+        return redirect()->route('admin.wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
             ->with('success', "Cleared {$count} WFH records and corresponding attendance.");
     }
 
@@ -1164,7 +1172,7 @@ class OperationsController extends Controller
         ]);
     }
 
-    public function deleteWfhSubmission(WfhMonitoringSubmission $submission): RedirectResponse
+    public function deleteWfhSubmission(Request $request, WfhMonitoringSubmission $submission): RedirectResponse
     {
         $employeeName = $submission->employee?->full_name ?? 'Unknown Employee';
         $wfhDate = $submission->wfh_date?->format('M d, Y') ?? 'Unknown Date';
@@ -1180,7 +1188,7 @@ class OperationsController extends Controller
             'wfh_date' => $wfhDate,
         ]);
 
-        return redirect()->route('admin.wfh-monitoring.index')
+        return redirect()->route('admin.wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
             ->with('success', "WFH submission deleted for {$employeeName} on {$wfhDate}.");
     }
 
@@ -1276,7 +1284,8 @@ class OperationsController extends Controller
             ['submission_id' => $submission->id]
         );
 
-        return back()->with('success', 'WFH submission approved and attendance was updated.');
+        return redirect()->route('admin.wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
+            ->with('success', 'WFH submission approved and attendance was updated.');
     }
 
     public function declineWfhSubmission(Request $request, WfhMonitoringSubmission $submission): RedirectResponse
@@ -1335,7 +1344,8 @@ class OperationsController extends Controller
             ['submission_id' => $submission->id]
         );
 
-        return back()->with('success', 'WFH submission declined. The employee has been notified.');
+        return redirect()->route('admin.wfh-monitoring.index', $this->listFilterQuery($request, ['search', 'department_id', 'status', 'date_from', 'date_to']))
+            ->with('success', 'WFH submission declined. The employee has been notified.');
     }
 
     /**
@@ -1503,6 +1513,7 @@ class OperationsController extends Controller
                 'department_id' => $departmentId,
                 'employee_class' => $employeeClass,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'department_id', 'employee_class']),
             'monthOptions' => $monthOptions,
             'stats' => [
                 'total_employees' => $leaveCards->count(),
@@ -1527,7 +1538,7 @@ class OperationsController extends Controller
         return app(HrOperationsController::class)->processLeaveUpload($request, $leaveMonitoringService);
     }
 
-    public function clearLeaveFileCache(): RedirectResponse
+    public function clearLeaveFileCache(Request $request): RedirectResponse
     {
         $uploadLogs = AdminAuditLog::query()
             ->where('module', 'Leave Management')
@@ -1543,7 +1554,7 @@ class OperationsController extends Controller
             'leave_records_affected' => false,
         ]);
 
-        return redirect()->route('admin.leave.index')
+        return redirect()->route('admin.leave.index', $this->listFilterQuery($request, ['search', 'department_id', 'employee_class']))
             ->with('success', $deleted > 0
                 ? "Cleared {$deleted} leave file cache {$entryLabel}."
                 : 'Leave file cache is already clear. Leave records were not changed.');

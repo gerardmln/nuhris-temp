@@ -22,7 +22,7 @@
             </div>
             <a href="{{ route('admin.dtr.validation.index') }}" class="rounded-lg border border-[#00386f] bg-white px-4 py-2 text-sm font-semibold text-[#00386f] hover:bg-blue-50 transition">Extraction Validation</a>
             <button data-open-modal="upload-dtr-modal" class="rounded-lg bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d] transition">Upload DTR PDF</button>
-            <form method="POST" action="{{ route('admin.dtr.clear-cache') }}" onsubmit="return confirm('Clear DTR cache? Attendance records will not be affected.');">
+            <form method="POST" action="{{ route('admin.dtr.clear-cache', $returnQuery) }}" onsubmit="return confirm('Clear DTR cache? Attendance records will not be affected.');">
                 @csrf
                 <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100 transition">Clear DTR Cache</button>
             </form>
@@ -100,12 +100,15 @@
                 <div class="flex flex-wrap gap-2">
                     <form method="GET" action="{{ route('admin.dtr.index') }}" class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         <input type="hidden" name="employee_id" value="{{ $employee?->id }}">
-                        <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1]; this.form.submit();" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
+                        <input type="hidden" name="search" value="{{ $listReturnQuery['search'] ?? '' }}">
+                        <input type="hidden" name="employee_class" value="{{ $listReturnQuery['employee_class'] ?? 'all' }}">
+                        <input type="hidden" name="attendance_range" value="{{ $attendanceRange ?? 'month' }}">
+                        <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1];" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none sm:w-auto">
                             @foreach ($periods as $period)
                                 <option value="{{ $period['month'] }}-{{ $period['year'] }}" {{ $period['selected'] ? 'selected' : '' }}>{{ $period['label'] }}</option>
                             @endforeach
                         </select>
-                        <select name="record_status" onchange="this.form.submit()" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none">
+                        <select name="record_status" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-400 focus:outline-none">
                             <option value="all" @selected(($recordStatus ?? 'all') === 'all')>All Statuses</option>
                             <option value="present" @selected(($recordStatus ?? '') === 'present')>Present</option>
                             <option value="not_present" @selected(($recordStatus ?? '') === 'not_present')>Not Present</option>
@@ -114,6 +117,7 @@
                         </select>
                         <input type="hidden" name="month" value="{{ $selectedMonth }}">
                         <input type="hidden" name="year" value="{{ $selectedYear }}">
+                        <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
                     </form>
                 </div>
             </div>
@@ -141,7 +145,7 @@
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.dtr.export-pdf', ['employee_id' => $employee?->id, 'month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50">Export PDF</a>
             <a href="{{ route('admin.dtr.export-excel', ['employee_id' => $employee?->id, 'month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50">Export Excel</a>
-            <a href="{{ route('admin.dtr.index', ['month' => $selectedMonth, 'year' => $selectedYear]) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">Back to All Employees</a>
+            <a href="{{ route('admin.dtr.index', array_merge($listReturnQuery, ['month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $attendanceRange ?? 'month'])) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">Back to All Employees</a>
         </div>
 
         <article class="overflow-x-auto rounded-xl border border-slate-300 bg-white p-4 shadow-sm" data-testid="admin-dtr-table-container">
@@ -217,30 +221,31 @@
             <form method="GET" action="{{ route('admin.dtr.index') }}" class="md:col-span-4 min-w-0">
                 <div class="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                     <input type="text" name="search" value="{{ request('search') ?? '' }}" placeholder="Search by name, email, ID, or department..." class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none sm:col-span-2 2xl:col-span-2">
-                    <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1]; this.form.submit();" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="period" onchange="this.form.querySelector('[name=month]').value=this.value.split('-')[0]; this.form.querySelector('[name=year]').value=this.value.split('-')[1];" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         @foreach ($periods as $period)
                             <option value="{{ $period['month'] }}-{{ $period['year'] }}" @selected($period['selected'])>{{ $period['label'] }}</option>
                         @endforeach
                     </select>
-                    <select name="employee_class" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="employee_class" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="all">All Employee Types</option>
                         <option value="regular" @selected(request('employee_class') === 'regular')>Regular Employees</option>
                         <option value="irregular" @selected(request('employee_class') === 'irregular')>Non-Regular Employee</option>
                     </select>
-                    <select name="record_status" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="record_status" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="all" @selected(($recordStatus ?? 'all') === 'all')>All Statuses</option>
                         <option value="present" @selected(($recordStatus ?? '') === 'present')>Present</option>
                         <option value="not_present" @selected(($recordStatus ?? '') === 'not_present')>Not Present</option>
                         <option value="non_working_day" @selected(($recordStatus ?? '') === 'non_working_day')>Non-working day</option>
                         <option value="weekend" @selected(($recordStatus ?? '') === 'weekend')>Weekend</option>
                     </select>
-                    <select name="attendance_range" onchange="this.form.submit()" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
+                    <select name="attendance_range" class="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="month" @selected(($attendanceRange ?? 'month') === 'month')>Total Month</option>
                         <option value="first_half" @selected(($attendanceRange ?? '') === 'first_half')>1st-15th</option>
                         <option value="second_half" @selected(($attendanceRange ?? '') === 'second_half')>16th-End</option>
                     </select>
                     <input type="hidden" name="month" value="{{ $selectedMonth }}">
                     <input type="hidden" name="year" value="{{ $selectedYear }}">
+                    <button type="submit" class="rounded-md bg-[#00386f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002f5d]">Filter</button>
                 </div>
             </form>
         </div>
@@ -276,7 +281,7 @@
                 @endunless
                 <p class="mt-3 text-xs text-slate-500">Schedule: {{ $card['schedule_summary'] }}</p>
                 <p class="mt-1 text-xs font-semibold text-blue-700">Weekly work hours: {{ $card['weekly_work_hours'] }}</p>
-                <a href="{{ route('admin.dtr.view', ['employee' => $card['id'], 'month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $attendanceRange ?? 'month']) }}" class="mt-3 block w-full rounded-md bg-[#00386f] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#002f5d] transition">View DTR</a>
+                <a href="{{ route('admin.dtr.view', ['employee' => $card['id'], 'month' => $selectedMonth, 'year' => $selectedYear, 'attendance_range' => $attendanceRange ?? 'month'] + $listReturnQuery) }}" class="mt-3 block w-full rounded-md bg-[#00386f] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#002f5d] transition">View DTR</a>
                 {{-- Clear DTR button removed to prevent accidental data loss --}}
             </article>
         @empty
@@ -296,7 +301,7 @@
                 </div>
                 <button type="button" data-close-modal class="text-4xl leading-none text-slate-500 hover:text-slate-700">&times;</button>
             </div>
-            <form id="upload-dtr-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('admin.dtr.upload') }}" enctype="multipart/form-data">
+            <form id="upload-dtr-form" class="px-7 pb-7 js-loading-form" method="POST" action="{{ route('admin.dtr.upload', $returnQuery) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 mb-4">
                     <p class="font-semibold">Employee ID Format Flexible</p>

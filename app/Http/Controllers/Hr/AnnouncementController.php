@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hr;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\PreservesListFilters;
 use App\Http\Requests\StoreAnnouncementRequest;
 use App\Models\Department;
 use App\Models\Announcement;
@@ -17,6 +18,8 @@ use Illuminate\View\View;
 
 class AnnouncementController extends Controller
 {
+    use PreservesListFilters;
+
     public function index(Request $request): View
     {
         $search = $request->string('search')->toString();
@@ -60,6 +63,7 @@ class AnnouncementController extends Controller
                 'search' => $search,
                 'priority' => $priority,
             ],
+            'returnQuery' => $this->listFilterQuery($request, ['search', 'priority', 'page']),
             'stats' => [
                 'total' => (clone $officialAnnouncementsQuery)->count(),
                 'active' => (clone $officialAnnouncementsQuery)->where('is_published', true)->count(),
@@ -167,10 +171,11 @@ class AnnouncementController extends Controller
             );
         });
 
-        return redirect()->route('announcements.index')->with('success', 'Announcement posted and notifications sent.');
+        return redirect()->route('announcements.index', $this->listFilterQuery($request, ['search', 'priority', 'page']))
+            ->with('success', 'Announcement posted and notifications sent.');
     }
 
-    public function destroy(Announcement $announcement): RedirectResponse
+    public function destroy(Request $request, Announcement $announcement): RedirectResponse
     {
         $announcement->delete();
 
@@ -182,6 +187,7 @@ class AnnouncementController extends Controller
             ['announcement_id' => $announcement->id]
         );
 
-        return redirect()->route('announcements.index')->with('success', 'Announcement deleted successfully.');
+        return redirect()->route('announcements.index', $this->listFilterQuery($request, ['search', 'priority', 'page']))
+            ->with('success', 'Announcement deleted successfully.');
     }
 }
